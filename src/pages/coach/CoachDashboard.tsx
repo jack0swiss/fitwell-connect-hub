@@ -6,6 +6,9 @@ import ClientListItem from '@/components/coach/ClientListItem';
 import ClientDetailCard from '@/components/coach/ClientDetailCard';
 import { Button } from '@/components/ui/button';
 
+// Define the activity type to match the one expected by ClientDetailCard
+type ActivityType = 'workout' | 'nutrition' | 'message';
+
 // Mock data - would come from Supabase in a real app
 const mockClients = [
   {
@@ -15,9 +18,9 @@ const mockClients = [
     nextWorkout: 'Strength Training, Today',
     lastLogin: '2 hours ago',
     recentActivities: [
-      { type: 'workout', title: 'Completed Upper Body', date: 'Today' },
-      { type: 'nutrition', title: 'Logged Breakfast', date: 'Today' },
-      { type: 'message', title: 'Sent a question', date: 'Yesterday' },
+      { type: 'workout' as ActivityType, title: 'Completed Upper Body', date: 'Today' },
+      { type: 'nutrition' as ActivityType, title: 'Logged Breakfast', date: 'Today' },
+      { type: 'message' as ActivityType, title: 'Sent a question', date: 'Yesterday' },
     ],
     nextSessions: [
       { title: 'Strength Training', date: 'Today, 5:00 PM' },
@@ -31,8 +34,8 @@ const mockClients = [
     nextWorkout: 'Cardio, Tomorrow',
     lastLogin: 'Yesterday',
     recentActivities: [
-      { type: 'workout', title: 'Missed Cardio Session', date: 'Yesterday' },
-      { type: 'nutrition', title: 'Updated Meal Plan', date: '2 days ago' },
+      { type: 'workout' as ActivityType, title: 'Missed Cardio Session', date: 'Yesterday' },
+      { type: 'nutrition' as ActivityType, title: 'Updated Meal Plan', date: '2 days ago' },
     ],
     nextSessions: [
       { title: 'Cardio Training', date: 'Tomorrow, 3:30 PM' },
@@ -45,8 +48,8 @@ const mockClients = [
     nextWorkout: 'Yoga, Wednesday',
     lastLogin: '3 days ago',
     recentActivities: [
-      { type: 'message', title: 'Asked about diet', date: '3 days ago' },
-      { type: 'workout', title: 'Completed Full Body', date: '4 days ago' },
+      { type: 'message' as ActivityType, title: 'Asked about diet', date: '3 days ago' },
+      { type: 'workout' as ActivityType, title: 'Completed Full Body', date: '4 days ago' },
     ],
     nextSessions: [
       { title: 'Yoga Session', date: 'Wednesday, 9:00 AM' },
