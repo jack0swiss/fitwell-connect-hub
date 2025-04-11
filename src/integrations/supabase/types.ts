@@ -116,6 +116,153 @@ export type Database = {
           },
         ]
       }
+      food_database: {
+        Row: {
+          calories_per_100g: number
+          carbs_g_per_100g: number | null
+          created_at: string
+          created_by: string | null
+          fat_g_per_100g: number | null
+          id: string
+          is_public: boolean | null
+          name: string
+          protein_g_per_100g: number | null
+        }
+        Insert: {
+          calories_per_100g: number
+          carbs_g_per_100g?: number | null
+          created_at?: string
+          created_by?: string | null
+          fat_g_per_100g?: number | null
+          id?: string
+          is_public?: boolean | null
+          name: string
+          protein_g_per_100g?: number | null
+        }
+        Update: {
+          calories_per_100g?: number
+          carbs_g_per_100g?: number | null
+          created_at?: string
+          created_by?: string | null
+          fat_g_per_100g?: number | null
+          id?: string
+          is_public?: boolean | null
+          name?: string
+          protein_g_per_100g?: number | null
+        }
+        Relationships: []
+      }
+      nutrition_logs: {
+        Row: {
+          calories: number
+          carbs_g: number | null
+          client_id: string | null
+          created_at: string
+          date: string
+          fat_g: number | null
+          food_name: string
+          id: string
+          meal_type: string
+          notes: string | null
+          protein_g: number | null
+          quantity: number | null
+          unit: string | null
+        }
+        Insert: {
+          calories: number
+          carbs_g?: number | null
+          client_id?: string | null
+          created_at?: string
+          date?: string
+          fat_g?: number | null
+          food_name: string
+          id?: string
+          meal_type: string
+          notes?: string | null
+          protein_g?: number | null
+          quantity?: number | null
+          unit?: string | null
+        }
+        Update: {
+          calories?: number
+          carbs_g?: number | null
+          client_id?: string | null
+          created_at?: string
+          date?: string
+          fat_g?: number | null
+          food_name?: string
+          id?: string
+          meal_type?: string
+          notes?: string | null
+          protein_g?: number | null
+          quantity?: number | null
+          unit?: string | null
+        }
+        Relationships: []
+      }
+      nutrition_plans: {
+        Row: {
+          client_id: string | null
+          coach_id: string | null
+          created_at: string
+          daily_calorie_target: number | null
+          id: string
+          macro_carbs_pct: number | null
+          macro_fat_pct: number | null
+          macro_protein_pct: number | null
+          plan_notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          client_id?: string | null
+          coach_id?: string | null
+          created_at?: string
+          daily_calorie_target?: number | null
+          id?: string
+          macro_carbs_pct?: number | null
+          macro_fat_pct?: number | null
+          macro_protein_pct?: number | null
+          plan_notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string | null
+          coach_id?: string | null
+          created_at?: string
+          daily_calorie_target?: number | null
+          id?: string
+          macro_carbs_pct?: number | null
+          macro_fat_pct?: number | null
+          macro_protein_pct?: number | null
+          plan_notes?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      water_logs: {
+        Row: {
+          amount_ml: number
+          client_id: string | null
+          created_at: string
+          date: string
+          id: string
+        }
+        Insert: {
+          amount_ml: number
+          client_id?: string | null
+          created_at?: string
+          date?: string
+          id?: string
+        }
+        Update: {
+          amount_ml?: number
+          client_id?: string | null
+          created_at?: string
+          date?: string
+          id?: string
+        }
+        Relationships: []
+      }
       workout_assignments: {
         Row: {
           client_id: string | null
@@ -313,7 +460,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_daily_nutrition_totals: {
+        Args: { user_id: string; log_date: string }
+        Returns: {
+          total_calories: number
+          total_protein: number
+          total_carbs: number
+          total_fat: number
+          total_water_ml: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

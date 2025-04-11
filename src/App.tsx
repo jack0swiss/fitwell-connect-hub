@@ -7,8 +7,11 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/login/Login";
 import CoachDashboard from "./pages/coach/CoachDashboard";
 import CoachWorkouts from "./pages/coach/CoachWorkouts";
+import CoachNutrition from "./pages/coach/CoachNutrition";
+import NutritionPlanForm from "./pages/coach/NutritionPlanForm";
 import ClientDashboard from "./pages/client/ClientDashboard";
 import ClientWorkouts from "./pages/client/ClientWorkouts";
+import ClientNutrition from "./pages/client/ClientNutrition";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,14 +29,15 @@ const App = () => (
           {/* Coach Routes */}
           <Route path="/coach" element={<CoachDashboard />} />
           <Route path="/coach/workouts" element={<CoachWorkouts />} />
-          <Route path="/coach/nutrition" element={<CoachDashboard />} />
+          <Route path="/coach/nutrition" element={<CoachNutrition />} />
+          <Route path="/coach/nutrition/plan/:planId" element={<NutritionPlanForm />} />
           <Route path="/coach/progress" element={<CoachDashboard />} />
           <Route path="/coach/chat" element={<CoachDashboard />} />
           
           {/* Client Routes */}
           <Route path="/client" element={<ClientDashboard />} />
           <Route path="/client/workouts" element={<ClientWorkouts />} />
-          <Route path="/client/nutrition" element={<ClientDashboard />} />
+          <Route path="/client/nutrition" element={<ClientNutrition />} />
           <Route path="/client/progress" element={<ClientDashboard />} />
           <Route path="/client/chat" element={<ClientDashboard />} />
           
