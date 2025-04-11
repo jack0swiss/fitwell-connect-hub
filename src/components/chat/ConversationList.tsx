@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -32,23 +31,62 @@ export function ConversationList({
         if (!user) return;
         
         // Find conversation partners based on user role
-        let query;
-        if (userRole === 'coach') {
-          // Coaches see all clients
-          query = supabase
-            .from('profiles')
-            .select('*')
-            .eq('role', 'client');
-        } else {
-          // Clients see their coach
-          query = supabase
-            .from('profiles')
-            .select('*')
-            .eq('role', 'coach');
-        }
+        let partnerProfiles: any[] = [];
         
-        const { data: profiles, error } = await query;
-        if (error) throw error;
+        if (userRole === 'coach') {
+          // Coaches see all clients - get all users with role=client
+          const { data: clientUsers, error } = await supabase
+            .from('messages')
+            .select('receiver_id, sender_id')
+            .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+            .order('sent_at', { ascending: false });
+            
+          if (error) throw error;
+          
+          // Extract unique user IDs that are not the current user
+          const uniqueUserIds = new Set<string>();
+          clientUsers?.forEach(msg => {
+            if (msg.sender_id !== user.id) uniqueUserIds.add(msg.sender_id);
+            if (msg.receiver_id !== user.id) uniqueUserIds.add(msg.receiver_id);
+          });
+          
+          // Get basic user info for each ID
+          // Note: In a real app, you'd have a profiles table with user details
+          // For now, we'll just use the IDs and placeholder names
+          partnerProfiles = Array.from(uniqueUserIds).map(id => ({
+            id,
+            first_name: `Client`,
+            last_name: id.substring(0, 5),
+            avatar_url: null,
+            role: 'client'
+          }));
+        } else {
+          // Clients see their coach - get all users with role=coach
+          // For now, just find any user they've chatted with
+          const { data: coachUsers, error } = await supabase
+            .from('messages')
+            .select('receiver_id, sender_id')
+            .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+            .order('sent_at', { ascending: false });
+            
+          if (error) throw error;
+          
+          // Extract unique user IDs that are not the current user
+          const uniqueUserIds = new Set<string>();
+          coachUsers?.forEach(msg => {
+            if (msg.sender_id !== user.id) uniqueUserIds.add(msg.sender_id);
+            if (msg.receiver_id !== user.id) uniqueUserIds.add(msg.receiver_id);
+          });
+          
+          // Get basic user info for each ID
+          partnerProfiles = Array.from(uniqueUserIds).map(id => ({
+            id,
+            first_name: `Coach`,
+            last_name: id.substring(0, 5),
+            avatar_url: null,
+            role: 'coach'
+          }));
+        }
         
         // Get unread message counts
         const { data: unreadCounts, error: unreadError } = await supabase
@@ -68,7 +106,7 @@ export function ConversationList({
         if (lastMsgError) throw lastMsgError;
         
         // Map profiles to chat partners
-        const mappedPartners = profiles.map(profile => {
+        const mappedPartners = partnerProfiles.map(profile => {
           const unreadCount = unreadCounts?.find(count => count.from_user_id === profile.id)?.unread_count || 0;
           
           // Find the last message between the current user and this partner
