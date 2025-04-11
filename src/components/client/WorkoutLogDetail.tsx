@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { WorkoutLog, ExerciseLog } from '@/types/workout';
+import { WorkoutLog, ExerciseLog, Exercise } from '@/types/workout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Calendar, Clock } from 'lucide-react';
@@ -14,10 +14,14 @@ interface WorkoutLogDetailProps {
   onBack: () => void;
 }
 
-interface ExerciseLogWithDetails extends ExerciseLog {
+interface ExerciseLogWithDetails extends Omit<ExerciseLog, 'exercise'> {
   exercise?: {
     id: number;
     name: string;
+    category_id?: number | null;
+    description?: string | null;
+    video_url?: string | null;
+    is_public?: boolean | null;
   };
 }
 

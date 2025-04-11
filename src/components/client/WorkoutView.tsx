@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Workout, WorkoutExercise, WorkoutLog, ExerciseLog } from '@/types/workout';
@@ -54,8 +53,7 @@ export const WorkoutView = ({ workout, onBack }: WorkoutViewProps) => {
         const { data: logData, error: logError } = await supabase
           .from('workout_logs')
           .select(`
-            *,
-            exercise_logs!exercise_logs(*)
+            *
           `)
           .eq('workout_id', workout.id)
           .eq('completed', true)
@@ -66,24 +64,33 @@ export const WorkoutView = ({ workout, onBack }: WorkoutViewProps) => {
         
         if (logData && logData.length > 0) {
           const lastLog = logData[0];
-          const exerciseLogs = lastLog.exercise_logs as ExerciseLog[];
+          
+          // Fetch exercise logs for the last workout
+          const { data: exerciseLogData, error: exerciseLogError } = await supabase
+            .from('exercise_logs')
+            .select('*')
+            .eq('workout_log_id', lastLog.id);
+            
+          if (exerciseLogError) throw exerciseLogError;
           
           // Create a map of exercise data from the last workout
           const exerciseData: {[key: string]: { weight: number | null; reps: number | null }[]} = {};
           
-          exerciseLogs.forEach(log => {
-            if (!log.exercise_id) return;
-            
-            const exerciseId = log.exercise_id.toString();
-            if (!exerciseData[exerciseId]) {
-              exerciseData[exerciseId] = [];
-            }
-            
-            exerciseData[exerciseId][log.set_number - 1] = {
-              weight: log.weight,
-              reps: log.reps
-            };
-          });
+          if (exerciseLogData) {
+            exerciseLogData.forEach(log => {
+              if (!log.exercise_id) return;
+              
+              const exerciseId = log.exercise_id.toString();
+              if (!exerciseData[exerciseId]) {
+                exerciseData[exerciseId] = [];
+              }
+              
+              exerciseData[exerciseId][log.set_number - 1] = {
+                weight: log.weight,
+                reps: log.reps
+              };
+            });
+          }
           
           setLastWorkoutData(exerciseData);
         }
