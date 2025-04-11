@@ -9,11 +9,13 @@ import CoachDashboard from "./pages/coach/CoachDashboard";
 import CoachWorkouts from "./pages/coach/CoachWorkouts";
 import CoachNutrition from "./pages/coach/CoachNutrition";
 import CoachProgress from "./pages/coach/CoachProgress";
+import CoachChat from "./pages/coach/CoachChat";
 import NutritionPlanForm from "./pages/coach/NutritionPlanForm";
 import ClientDashboard from "./pages/client/ClientDashboard";
 import ClientWorkouts from "./pages/client/ClientWorkouts";
 import ClientNutrition from "./pages/client/ClientNutrition";
 import ClientProgress from "./pages/client/ClientProgress";
+import ClientChat from "./pages/client/ClientChat";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,14 +36,14 @@ const App = () => (
           <Route path="/coach/nutrition" element={<CoachNutrition />} />
           <Route path="/coach/nutrition/plan/:planId" element={<NutritionPlanForm />} />
           <Route path="/coach/progress" element={<CoachProgress />} />
-          <Route path="/coach/chat" element={<CoachDashboard />} />
+          <Route path="/coach/chat" element={<CoachChat />} />
           
           {/* Client Routes */}
           <Route path="/client" element={<ClientDashboard />} />
           <Route path="/client/workouts" element={<ClientWorkouts />} />
           <Route path="/client/nutrition" element={<ClientNutrition />} />
           <Route path="/client/progress" element={<ClientProgress />} />
-          <Route path="/client/chat" element={<ClientDashboard />} />
+          <Route path="/client/chat" element={<ClientChat />} />
           
           {/* Home redirects to login */}
           <Route path="/" element={<Navigate to="/login" replace />} />

@@ -1,10 +1,13 @@
 
-import React, { useState } from 'react';
-import { Bell } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Bell, MessageCircle } from 'lucide-react';
 import TabBar from '@/components/TabBar';
 import ClientListItem from '@/components/coach/ClientListItem';
 import ClientDetailCard from '@/components/coach/ClientDetailCard';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 
 // Define the activity type to match the one expected by ClientDetailCard
 type ActivityType = 'workout' | 'nutrition' | 'message';
@@ -60,6 +63,8 @@ const mockClients = [
 
 const CoachDashboard = () => {
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [unreadMessages, setUnreadMessages] = useState(0);
+  const navigate = useNavigate();
   
   const selectedClient = mockClients.find(client => client.id === selectedClientId);
   
@@ -71,14 +76,65 @@ const CoachDashboard = () => {
     setSelectedClientId(null);
   };
 
+  useEffect(() => {
+    // Fetch unread message count
+    const fetchUnreadCount = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        const { data, error } = await supabase
+          .from('unread_message_counts')
+          .select('unread_count')
+          .eq('user_id', user.id);
+          
+        if (!error && data) {
+          const totalUnread = data.reduce((sum, item) => sum + item.unread_count, 0);
+          setUnreadMessages(totalUnread);
+        }
+      }
+    };
+    
+    fetchUnreadCount();
+    
+    // Subscribe to message updates
+    const channel = supabase
+      .channel('public:messages')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages'
+        },
+        () => {
+          fetchUnreadCount();
+        }
+      )
+      .subscribe();
+      
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   return (
     <div className="min-h-screen bg-fitwell-dark text-white pb-20">
       <header className="sticky top-0 z-10 bg-card/80 backdrop-blur-sm border-b border-border/50 p-4 flex justify-between items-center">
         <h1 className="text-xl font-bold">Coach Dashboard</h1>
-        <Button variant="outline" size="icon" className="relative">
-          <Bell className="h-5 w-5" />
-          <span className="absolute top-0 right-0 w-2 h-2 bg-fitwell-purple rounded-full"></span>
-        </Button>
+        <div className="flex space-x-2">
+          <Button variant="outline" size="icon" className="relative" onClick={() => navigate('/coach/chat')}>
+            <MessageCircle className="h-5 w-5" />
+            {unreadMessages > 0 && (
+              <Badge variant="default" className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-fitwell-purple">
+                {unreadMessages > 9 ? '9+' : unreadMessages}
+              </Badge>
+            )}
+          </Button>
+          <Button variant="outline" size="icon" className="relative">
+            <Bell className="h-5 w-5" />
+            <span className="absolute top-0 right-0 w-2 h-2 bg-fitwell-purple rounded-full"></span>
+          </Button>
+        </div>
       </header>
       
       <main className="p-4 max-w-2xl mx-auto">

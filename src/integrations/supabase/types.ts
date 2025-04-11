@@ -239,6 +239,42 @@ export type Database = {
         }
         Relationships: []
       }
+      messages: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          receiver_id: string | null
+          related_entity_id: string | null
+          related_entity_type: string | null
+          sender_id: string | null
+          sent_at: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          receiver_id?: string | null
+          related_entity_id?: string | null
+          related_entity_type?: string | null
+          sender_id?: string | null
+          sent_at?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          receiver_id?: string | null
+          related_entity_id?: string | null
+          related_entity_type?: string | null
+          sender_id?: string | null
+          sent_at?: string | null
+        }
+        Relationships: []
+      }
       nutrition_logs: {
         Row: {
           calories: number
@@ -632,6 +668,14 @@ export type Database = {
           },
         ]
       }
+      unread_message_counts: {
+        Row: {
+          from_user_id: string | null
+          unread_count: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       get_daily_nutrition_totals: {
@@ -659,6 +703,10 @@ export type Database = {
           planned_workouts: number
           adherence_percentage: number
         }[]
+      }
+      mark_messages_as_read: {
+        Args: { p_conversation_partner_id: string }
+        Returns: undefined
       }
     }
     Enums: {
