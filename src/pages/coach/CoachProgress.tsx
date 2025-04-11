@@ -186,7 +186,7 @@ const CoachProgress = () => {
                         <p className="text-xs text-muted-foreground">Adherence</p>
                       </div>
                     </div>
-                    <Badge variant={selectedClient.workout.adherence > 80 ? "success" : "warning"}>
+                    <Badge variant={selectedClient.workout.adherence > 80 ? "secondary" : "outline"} className={selectedClient.workout.adherence > 80 ? "bg-green-600" : "bg-amber-600"}>
                       {selectedClient.workout.adherence}%
                     </Badge>
                   </div>
@@ -198,7 +198,7 @@ const CoachProgress = () => {
                         <p className="text-xs text-muted-foreground">Adherence</p>
                       </div>
                     </div>
-                    <Badge variant={selectedClient.nutrition.adherence > 80 ? "success" : "warning"}>
+                    <Badge variant={selectedClient.nutrition.adherence > 80 ? "secondary" : "outline"} className={selectedClient.nutrition.adherence > 80 ? "bg-green-600" : "bg-amber-600"}>
                       {selectedClient.nutrition.adherence}%
                     </Badge>
                   </div>

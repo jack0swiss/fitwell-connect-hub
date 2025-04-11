@@ -20,36 +20,14 @@ import { Progress } from '@/components/ui/progress';
 import { toast } from '@/components/ui/use-toast';
 import { DailyNutritionSummary } from '@/components/client/DailyNutritionSummary';
 import { CircularProgressChart } from '@/components/client/CircularProgressChart';
+import { BodyMetricsDialog } from '@/components/client/BodyMetricsDialog';
 import {
-  Chart,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-
-// Define types for the fetched data
-type BodyMetric = {
-  id: string;
-  date: string;
-  weight_kg: number | null;
-  body_fat_percent: number | null;
-  chest_cm: number | null;
-  waist_cm: number | null;
-  hip_cm: number | null;
-};
-
-type NutritionAdherence = {
-  avg_daily_calories: number;
-  target_calories: number;
-  calorie_adherence_percentage: number;
-};
-
-type WorkoutAdherence = {
-  completed_workouts: number;
-  planned_workouts: number;
-  adherence_percentage: number;
-};
+import { BodyMetric, NutritionAdherence, WorkoutAdherence } from '@/types/nutrition';
 
 const ClientProgress = () => {
   const [selectedDateRange, setSelectedDateRange] = useState<'week' | 'month' | 'year'>('month');
@@ -82,7 +60,7 @@ const ClientProgress = () => {
   const { startDate, endDate } = getDateRange();
   
   // Fetch body metrics data
-  const { data: bodyMetrics, isLoading: metricsLoading } = useQuery({
+  const { data: bodyMetrics, isLoading: metricsLoading, refetch: refetchMetrics } = useQuery({
     queryKey: ['bodyMetrics', startDate, endDate],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -98,7 +76,7 @@ const ClientProgress = () => {
   });
   
   // Fetch nutrition adherence data
-  const { data: nutritionAdherence, isLoading: nutritionLoading } = useQuery({
+  const { data: nutritionAdherenceData, isLoading: nutritionLoading } = useQuery({
     queryKey: ['nutritionAdherence', startDate, endDate],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -109,12 +87,12 @@ const ClientProgress = () => {
         });
         
       if (error) throw error;
-      return data as NutritionAdherence;
+      return data as unknown as NutritionAdherence;
     }
   });
   
   // Fetch workout adherence data
-  const { data: workoutAdherence, isLoading: workoutLoading } = useQuery({
+  const { data: workoutAdherenceData, isLoading: workoutLoading } = useQuery({
     queryKey: ['workoutAdherence', startDate, endDate],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -125,9 +103,22 @@ const ClientProgress = () => {
         });
         
       if (error) throw error;
-      return data as WorkoutAdherence;
+      return data as unknown as WorkoutAdherence;
     }
   });
+
+  // Extract the actual adherence data
+  const nutritionAdherence = nutritionAdherenceData || { 
+    avg_daily_calories: 0, 
+    target_calories: 0, 
+    calorie_adherence_percentage: 0 
+  };
+
+  const workoutAdherence = workoutAdherenceData || { 
+    completed_workouts: 0, 
+    planned_workouts: 0, 
+    adherence_percentage: 0 
+  };
   
   // Format chart data
   const weightData = bodyMetrics?.map(metric => ({
@@ -147,12 +138,9 @@ const ClientProgress = () => {
     hip: metric.hip_cm
   })).filter(item => item.chest !== null || item.waist !== null || item.hip !== null);
   
-  // Handle adding new metrics (simplified version)
-  const handleAddMetrics = () => {
-    toast({
-      title: "Feature Coming Soon",
-      description: "The ability to add new body metrics will be available in the next update."
-    });
+  // Handle metrics added
+  const handleMetricsAdded = () => {
+    refetchMetrics();
   };
 
   return (
@@ -243,9 +231,7 @@ const ClientProgress = () => {
                 <Scale className="h-5 w-5 mr-2 text-fitwell-purple" />
                 Weight Tracking
               </CardTitle>
-              <Button variant="outline" size="sm" onClick={handleAddMetrics}>
-                Add Entry
-              </Button>
+              <BodyMetricsDialog onMetricsAdded={handleMetricsAdded} />
             </div>
           </CardHeader>
           <CardContent>
@@ -276,14 +262,7 @@ const ClientProgress = () => {
             ) : (
               <div className="text-center py-12 text-muted-foreground">
                 <p>No weight data available for this time period.</p>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="mt-2" 
-                  onClick={handleAddMetrics}
-                >
-                  Add Your First Entry
-                </Button>
+                <BodyMetricsDialog onMetricsAdded={handleMetricsAdded} />
               </div>
             )}
           </CardContent>
@@ -297,9 +276,7 @@ const ClientProgress = () => {
                 <Ruler className="h-5 w-5 mr-2 text-fitwell-blue" />
                 Body Measurements
               </CardTitle>
-              <Button variant="outline" size="sm" onClick={handleAddMetrics}>
-                Add Entry
-              </Button>
+              <BodyMetricsDialog onMetricsAdded={handleMetricsAdded} />
             </div>
           </CardHeader>
           <CardContent>
@@ -333,14 +310,7 @@ const ClientProgress = () => {
             ) : (
               <div className="text-center py-12 text-muted-foreground">
                 <p>No measurement data available for this time period.</p>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="mt-2" 
-                  onClick={handleAddMetrics}
-                >
-                  Add Your First Entry
-                </Button>
+                <BodyMetricsDialog onMetricsAdded={handleMetricsAdded} />
               </div>
             )}
           </CardContent>
@@ -354,9 +324,7 @@ const ClientProgress = () => {
                 <TrendingUp className="h-5 w-5 mr-2 text-green-500" />
                 Body Fat Percentage
               </CardTitle>
-              <Button variant="outline" size="sm" onClick={handleAddMetrics}>
-                Add Entry
-              </Button>
+              <BodyMetricsDialog onMetricsAdded={handleMetricsAdded} />
             </div>
           </CardHeader>
           <CardContent>
@@ -388,14 +356,7 @@ const ClientProgress = () => {
             ) : (
               <div className="text-center py-12 text-muted-foreground">
                 <p>No body fat data available for this time period.</p>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="mt-2" 
-                  onClick={handleAddMetrics}
-                >
-                  Add Your First Entry
-                </Button>
+                <BodyMetricsDialog onMetricsAdded={handleMetricsAdded} />
               </div>
             )}
           </CardContent>

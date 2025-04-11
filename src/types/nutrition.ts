@@ -56,4 +56,29 @@ export type DailyNutritionTotals = {
   total_water_ml: number;
 };
 
+export type BodyMetric = {
+  id: string;
+  client_id: string | null;
+  date: string;
+  weight_kg: number | null;
+  body_fat_percent: number | null;
+  chest_cm: number | null;
+  waist_cm: number | null;
+  hip_cm: number | null;
+  notes: string | null;
+  created_at: string;
+};
+
+export type NutritionAdherence = {
+  avg_daily_calories: number;
+  target_calories: number;
+  calorie_adherence_percentage: number;
+};
+
+export type WorkoutAdherence = {
+  completed_workouts: number;
+  planned_workouts: number;
+  adherence_percentage: number;
+};
+
 export const mealTypes = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
