@@ -9,6 +9,45 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      body_metrics: {
+        Row: {
+          body_fat_percent: number | null
+          chest_cm: number | null
+          client_id: string | null
+          created_at: string
+          date: string
+          hip_cm: number | null
+          id: string
+          notes: string | null
+          waist_cm: number | null
+          weight_kg: number | null
+        }
+        Insert: {
+          body_fat_percent?: number | null
+          chest_cm?: number | null
+          client_id?: string | null
+          created_at?: string
+          date?: string
+          hip_cm?: number | null
+          id?: string
+          notes?: string | null
+          waist_cm?: number | null
+          weight_kg?: number | null
+        }
+        Update: {
+          body_fat_percent?: number | null
+          chest_cm?: number | null
+          client_id?: string | null
+          created_at?: string
+          date?: string
+          hip_cm?: number | null
+          id?: string
+          notes?: string | null
+          waist_cm?: number | null
+          weight_kg?: number | null
+        }
+        Relationships: []
+      }
       exercise_categories: {
         Row: {
           created_at: string
@@ -115,6 +154,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      fitness_goals: {
+        Row: {
+          achievement_date: string | null
+          client_id: string | null
+          coach_id: string | null
+          created_at: string
+          goal_type: string
+          id: string
+          is_achieved: boolean | null
+          notes: string | null
+          start_date: string
+          start_value: number | null
+          target_date: string | null
+          target_value: number
+          updated_at: string
+        }
+        Insert: {
+          achievement_date?: string | null
+          client_id?: string | null
+          coach_id?: string | null
+          created_at?: string
+          goal_type: string
+          id?: string
+          is_achieved?: boolean | null
+          notes?: string | null
+          start_date?: string
+          start_value?: number | null
+          target_date?: string | null
+          target_value: number
+          updated_at?: string
+        }
+        Update: {
+          achievement_date?: string | null
+          client_id?: string | null
+          coach_id?: string | null
+          created_at?: string
+          goal_type?: string
+          id?: string
+          is_achieved?: boolean | null
+          notes?: string | null
+          start_date?: string
+          start_value?: number | null
+          target_date?: string | null
+          target_value?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       food_database: {
         Row: {
@@ -236,6 +323,74 @@ export type Database = {
           macro_protein_pct?: number | null
           plan_notes?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      personal_bests: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          date: string
+          exercise_id: number | null
+          id: string
+          reps: number | null
+          weight: number | null
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          date?: string
+          exercise_id?: number | null
+          id?: string
+          reps?: number | null
+          weight?: number | null
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          date?: string
+          exercise_id?: number | null
+          id?: string
+          reps?: number | null
+          weight?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "personal_bests_exercise_id_fkey"
+            columns: ["exercise_id"]
+            isOneToOne: false
+            referencedRelation: "exercises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      progress_photos: {
+        Row: {
+          category: string
+          client_id: string | null
+          created_at: string
+          date: string
+          id: string
+          notes: string | null
+          photo_url: string
+        }
+        Insert: {
+          category: string
+          client_id?: string | null
+          created_at?: string
+          date?: string
+          id?: string
+          notes?: string | null
+          photo_url: string
+        }
+        Update: {
+          category?: string
+          client_id?: string | null
+          created_at?: string
+          date?: string
+          id?: string
+          notes?: string | null
+          photo_url?: string
         }
         Relationships: []
       }
@@ -457,7 +612,26 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      exercise_progression: {
+        Row: {
+          best_set_number: number | null
+          client_id: string | null
+          date: string | null
+          exercise_id: number | null
+          exercise_name: string | null
+          max_reps: number | null
+          max_weight: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exercise_logs_exercise_id_fkey"
+            columns: ["exercise_id"]
+            isOneToOne: false
+            referencedRelation: "exercises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       get_daily_nutrition_totals: {
@@ -468,6 +642,22 @@ export type Database = {
           total_carbs: number
           total_fat: number
           total_water_ml: number
+        }[]
+      }
+      get_nutrition_adherence: {
+        Args: { user_id: string; start_date: string; end_date: string }
+        Returns: {
+          avg_daily_calories: number
+          target_calories: number
+          calorie_adherence_percentage: number
+        }[]
+      }
+      get_workout_adherence: {
+        Args: { user_id: string; start_date: string; end_date: string }
+        Returns: {
+          completed_workouts: number
+          planned_workouts: number
+          adherence_percentage: number
         }[]
       }
     }
