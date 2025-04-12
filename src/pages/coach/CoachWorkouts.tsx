@@ -7,9 +7,38 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ExerciseLibrary } from '@/components/coach/ExerciseLibrary';
 import { toast } from '@/components/ui/use-toast';
 import { CoachLayout } from '@/components/layouts/CoachLayout';
+import { supabase } from '@/integrations/supabase/client';
 
 const CoachWorkouts = () => {
   const [activeTab, setActiveTab] = useState('plans');
+  const [isLoading, setIsLoading] = useState(true);
+  
+  useEffect(() => {
+    // Check if user is authenticated and has the coach role
+    const checkAuth = async () => {
+      try {
+        console.log("Checking authentication in CoachWorkouts");
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+          console.log("No session found in CoachWorkouts");
+          setIsLoading(false);
+          return;
+        }
+        
+        // Get user data
+        const { data: { user } } = await supabase.auth.getUser();
+        console.log("User data in CoachWorkouts:", user);
+        
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Auth check error in CoachWorkouts:', error);
+        setIsLoading(false);
+      }
+    };
+    
+    checkAuth();
+  }, []);
   
   const handleSelectExercise = () => {
     toast({
@@ -17,6 +46,16 @@ const CoachWorkouts = () => {
       description: "Select 'Plans' tab to build workouts with this exercise.",
     });
   };
+
+  if (isLoading) {
+    return (
+      <CoachLayout title="Workout Manager">
+        <div className="flex justify-center items-center h-full py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-fitwell-purple"></div>
+        </div>
+      </CoachLayout>
+    );
+  }
 
   return (
     <CoachLayout title="Workout Manager">

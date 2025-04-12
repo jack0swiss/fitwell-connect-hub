@@ -16,13 +16,29 @@ export const WorkoutPlanList = () => {
   const [selectedPlan, setSelectedPlan] = useState<WorkoutPlan | null>(null);
   const [isCreatingPlan, setIsCreatingPlan] = useState(false);
   const [isAssigningPlan, setIsAssigningPlan] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchPlans = async () => {
       try {
         setLoading(true);
-        // Ensure we're using the Supabase client properly, which will automatically
-        // add the authentication token to requests
+        setError(null);
+        
+        console.log("Fetching workout plans...");
+        
+        // Get user session
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+          console.error("No active session found");
+          setError("Authentication required. Please log in again.");
+          setLoading(false);
+          return;
+        }
+        
+        console.log("Session found:", session.user.id);
+        
+        // Fetch workout plans
         const { data, error } = await supabase
           .from('workout_plans')
           .select('*')
@@ -30,6 +46,7 @@ export const WorkoutPlanList = () => {
           
         if (error) {
           console.error('Error details:', error);
+          setError(`Failed to load workout plans: ${error.message}`);
           throw error;
         }
         
@@ -37,6 +54,7 @@ export const WorkoutPlanList = () => {
         setPlans(data || []);
       } catch (error) {
         console.error('Error fetching workout plans:', error);
+        setError("Failed to load workout plans. Please try again.");
         toast({
           title: 'Error',
           description: 'Failed to load workout plans',
@@ -76,6 +94,7 @@ export const WorkoutPlanList = () => {
 
   const refreshPlans = async () => {
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from('workout_plans')
         .select('*')
@@ -85,6 +104,13 @@ export const WorkoutPlanList = () => {
       setPlans(data || []);
     } catch (error) {
       console.error('Error refreshing plans:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to refresh workout plans',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -110,6 +136,22 @@ export const WorkoutPlanList = () => {
           setIsAssigningPlan(false);
         }}
       />
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 border border-red-300 rounded-md bg-red-50 text-red-700">
+        <h3 className="font-medium">Error</h3>
+        <p>{error}</p>
+        <Button 
+          variant="outline" 
+          className="mt-2" 
+          onClick={refreshPlans}
+        >
+          Try Again
+        </Button>
+      </div>
     );
   }
 
