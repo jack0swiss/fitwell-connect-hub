@@ -43,27 +43,25 @@ export function useChat(partnerId?: string) {
         throw new Error('Not authenticated');
       }
       
+      console.log("Fetching messages between", user.id, "and", partnerId);
+      
       // Fetch messages between current user and partner
       const { data, error } = await supabase
         .from('messages')
         .select('*')
-        .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
-        .or(`sender_id.eq.${partnerId},receiver_id.eq.${partnerId}`)
+        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${user.id})`)
         .order('sent_at', { ascending: true });
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching messages:", error);
+        throw error;
+      }
       
-      // Filter to only include messages between these two users
-      const filteredMessages = data.filter(
-        msg => 
-          (msg.sender_id === user.id && msg.receiver_id === partnerId) || 
-          (msg.sender_id === partnerId && msg.receiver_id === user.id)
-      ) as ChatMessage[];
-      
-      setMessages(filteredMessages);
+      console.log("Fetched messages:", data);
+      setMessages(data as ChatMessage[]);
       
       // Mark messages as read
-      if (filteredMessages.some(msg => msg.receiver_id === user.id && !msg.is_read)) {
+      if (data.some(msg => msg.receiver_id === user.id && !msg.is_read)) {
         await supabase.rpc('mark_messages_as_read', { p_conversation_partner_id: partnerId });
       }
     } catch (err) {
@@ -89,6 +87,8 @@ export function useChat(partnerId?: string) {
         throw new Error('Cannot send message: Missing user or partner ID');
       }
       
+      console.log("Sending message from", user.id, "to", partnerId);
+      
       const newMessage = {
         sender_id: user.id,
         receiver_id: partnerId,
@@ -97,11 +97,17 @@ export function useChat(partnerId?: string) {
         related_entity_id: relatedEntityId
       };
       
-      const { error } = await supabase
+      const { error, data } = await supabase
         .from('messages')
-        .insert([newMessage]);
+        .insert([newMessage])
+        .select();
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error sending message:", error);
+        throw error;
+      }
+      
+      console.log("Message sent successfully:", data);
       
       // No need to manually update the messages array as real-time will handle this
     } catch (err) {
@@ -125,6 +131,8 @@ export function useChat(partnerId?: string) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      console.log("Setting up realtime subscription for", user.id);
+
       // Subscribe to new messages
       const channel = supabase
         .channel('public:messages')
@@ -137,6 +145,7 @@ export function useChat(partnerId?: string) {
             filter: `receiver_id=eq.${user.id}`
           },
           (payload) => {
+            console.log("Received new message:", payload);
             // Only add messages from the current chat partner
             if (payload.new.sender_id === partnerId) {
               setMessages(prev => [...prev, payload.new as ChatMessage]);

@@ -44,14 +44,28 @@ export const AddWaterLogDialog = ({
     try {
       setSubmitting(true);
       
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+      
+      console.log("Logging water for user:", user.id);
+      console.log("Water data:", { date, amount_ml: parseInt(amount) });
+      
       const { error } = await supabase
         .from('water_logs')
         .insert({
           date,
           amount_ml: parseInt(amount),
+          client_id: user.id
         });
         
-      if (error) throw error;
+      if (error) {
+        console.error('Database error:', error);
+        throw error;
+      }
       
       toast({
         title: 'Water logged',

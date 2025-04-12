@@ -72,17 +72,23 @@ export const BodyMetricsDialog = ({ onMetricsAdded }: BodyMetricsDialogProps) =>
         throw new Error('User not authenticated');
       }
 
+      console.log("Saving body metrics for user:", user.id);
+      console.log("Metrics data:", metricsData);
+
       // Save to database
       const { error } = await supabase
         .from('body_metrics')
         .insert([
           {
-            client_id: user.id,
-            ...metricsData
+            ...metricsData,
+            client_id: user.id
           }
         ]);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error:', error);
+        throw error;
+      }
 
       // Success message
       toast({

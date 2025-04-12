@@ -31,6 +31,8 @@ export function ChatView({ partnerId }: ChatViewProps) {
     }
   }, [messages]);
 
+  console.log("Chat view: current user:", currentUserId, "partner:", partnerId, "messages:", messages);
+
   if (isLoading) {
     return (
       <div className="flex flex-col h-full p-4 overflow-hidden">
