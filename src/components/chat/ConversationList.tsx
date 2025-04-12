@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ChatPartner } from '@/hooks/use-chat';
 import { formatDistanceToNow } from 'date-fns';
+import { toast } from '@/components/ui/use-toast';
 
 interface ConversationListProps {
   onSelectPartner: (partnerId: string) => void;
@@ -21,29 +22,48 @@ export function ConversationList({
 }: ConversationListProps) {
   const [partners, setPartners] = useState<ChatPartner[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
+    // First get the current user
+    const getAuthUser = async () => {
+      try {
+        const { data, error } = await supabase.auth.getUser();
+        if (error) {
+          console.error("Auth error:", error.message);
+          toast({
+            title: "Authentication Error",
+            description: "Unable to retrieve your user information",
+            variant: "destructive"
+          });
+          return null;
+        }
+        return data.user?.id || null;
+      } catch (err) {
+        console.error("Unexpected auth error:", err);
+        return null;
+      }
+    };
+
     const fetchPartners = async () => {
       try {
         setIsLoading(true);
         
         // Get current user
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          console.error("No authenticated user found");
+        const userId = await getAuthUser();
+        if (!userId) {
+          setIsLoading(false);
           return;
         }
         
-        console.log("Current user:", user.id, "with role:", userRole);
-        
-        // Find conversation partners based on user role
-        let partnerProfiles: any[] = [];
+        setCurrentUserId(userId);
+        console.log("Current user:", userId, "with role:", userRole);
         
         // Fetch all messages where the current user is either sender or receiver
         const { data: messagesData, error: messagesError } = await supabase
           .from('messages')
-          .select('receiver_id, sender_id')
-          .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+          .select('*')
+          .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
           .order('sent_at', { ascending: false });
           
         if (messagesError) {
@@ -54,79 +74,63 @@ export function ConversationList({
         console.log("Messages data:", messagesData);
         
         // Extract unique user IDs that are not the current user
-        const uniqueUserIds = new Set<string>();
+        const uniquePartnersMap = new Map<string, {
+          lastMessage: any,
+          unreadCount: number
+        }>();
+        
         messagesData?.forEach(msg => {
-          if (msg.sender_id !== user.id) uniqueUserIds.add(msg.sender_id);
-          if (msg.receiver_id !== user.id) uniqueUserIds.add(msg.receiver_id);
+          const partnerId = msg.sender_id === userId ? msg.receiver_id : msg.sender_id;
+          
+          // Skip if it's somehow the same user
+          if (partnerId === userId) return;
+          
+          const existing = uniquePartnersMap.get(partnerId);
+          const isUnread = !msg.is_read && msg.receiver_id === userId;
+          
+          if (!existing) {
+            uniquePartnersMap.set(partnerId, {
+              lastMessage: msg,
+              unreadCount: isUnread ? 1 : 0
+            });
+          } else {
+            // Only update last message if this one is newer
+            if (new Date(msg.sent_at) > new Date(existing.lastMessage.sent_at)) {
+              existing.lastMessage = msg;
+            }
+            
+            if (isUnread) {
+              existing.unreadCount += 1;
+            }
+          }
         });
         
-        // Remove current user from the set if it's there
-        uniqueUserIds.delete(user.id);
+        console.log("Unique partners map:", uniquePartnersMap);
         
-        console.log("Unique partner IDs:", Array.from(uniqueUserIds));
-        
-        // Get basic user info for each ID
-        // Note: In a real app, you'd have a profiles table with user details
-        if (userRole === 'coach') {
-          partnerProfiles = Array.from(uniqueUserIds).map(id => ({
-            id,
-            first_name: `Client`,
-            last_name: id.substring(0, 5),
-            avatar_url: null,
-            role: 'client'
-          }));
-        } else {
-          partnerProfiles = Array.from(uniqueUserIds).map(id => ({
-            id,
-            first_name: `Coach`,
-            last_name: id.substring(0, 5),
-            avatar_url: null,
-            role: 'coach'
-          }));
-        }
-        
-        console.log("Partner profiles:", partnerProfiles);
-        
-        // Get unread message counts
-        const { data: unreadCountsData } = await supabase
-          .from('unread_message_counts')
-          .select('*')
-          .eq('user_id', user.id);
-        
-        console.log("Unread counts:", unreadCountsData);
-        
-        // Get last messages
-        const { data: lastMessagesData } = await supabase
-          .from('messages')
-          .select('*')
-          .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
-          .order('sent_at', { ascending: false });
-        
-        console.log("Last messages:", lastMessagesData);
-        
-        // Map profiles to chat partners
-        const mappedPartners = partnerProfiles.map(profile => {
-          const unreadCount = unreadCountsData?.find(count => count.from_user_id === profile.id)?.unread_count || 0;
-          
-          // Find the last message between the current user and this partner
-          const lastMsg = lastMessagesData?.find(msg => 
-            (msg.sender_id === user.id && msg.receiver_id === profile.id) || 
-            (msg.sender_id === profile.id && msg.receiver_id === user.id)
-          );
+        // Convert to array for the component
+        const partnersList = Array.from(uniquePartnersMap.entries()).map(([id, data]) => {
+          // In a real app with profiles table, you'd fetch actual names
+          // For mock purposes, create a fallback name based on the role
+          const partnerName = userRole === 'coach' ? `Client ${id.slice(0, 4)}` : `Coach ${id.slice(0, 4)}`;
           
           return {
-            id: profile.id,
-            name: `${profile.first_name} ${profile.last_name}`,
-            avatarUrl: profile.avatar_url,
-            unreadCount,
-            lastMessage: lastMsg
+            id,
+            name: partnerName,
+            avatarUrl: null,
+            unreadCount: data.unreadCount,
+            lastMessage: data.lastMessage
           };
         });
         
-        console.log("Mapped partners:", mappedPartners);
-        setPartners(mappedPartners);
+        console.log("Mapped partners:", partnersList);
+        setPartners(partnersList);
       } catch (err) {
         console.error('Error fetching conversation partners:', err);
+        toast({
+          title: "Error",
+          description: "Failed to load your conversations",
+          variant: "destructive"
+        });
       } finally {
         setIsLoading(false);
       }
@@ -135,24 +139,36 @@ export function ConversationList({
     fetchPartners();
     
     // Set up realtime subscription for new messages
-    const channel = supabase
-      .channel('public:messages')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages'
-        },
-        () => {
-          // Refresh the partner list when new messages arrive
-          fetchPartners();
-        }
-      )
-      .subscribe();
+    const setupRealtimeSubscription = async () => {
+      const userId = await getAuthUser();
+      if (!userId) return;
+      
+      const channel = supabase
+        .channel('public:messages')
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'messages',
+            filter: `receiver_id=eq.${userId}`
+          },
+          (payload) => {
+            console.log("New message received:", payload);
+            // Refresh the partner list when a new message arrives
+            fetchPartners();
+          }
+        )
+        .subscribe();
+      
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    };
     
+    const cleanup = setupRealtimeSubscription();
     return () => {
-      supabase.removeChannel(channel);
+      if (cleanup) cleanup.then(fn => fn());
     };
   }, [userRole]);
 
@@ -168,6 +184,14 @@ export function ConversationList({
             </div>
           </div>
         ))}
+      </div>
+    );
+  }
+
+  if (!currentUserId) {
+    return (
+      <div className="p-4 text-center text-muted-foreground">
+        You need to be logged in to view conversations.
       </div>
     );
   }
@@ -200,7 +224,7 @@ export function ConversationList({
           onClick={() => onSelectPartner(partner.id)}
         >
           <Avatar className="h-10 w-10 mr-3">
-            <AvatarImage src={partner.avatarUrl} alt={partner.name} />
+            <AvatarImage src={partner.avatarUrl || ''} alt={partner.name} />
             <AvatarFallback className="bg-fitwell-purple text-white">
               {getInitials(partner.name)}
             </AvatarFallback>

@@ -1,107 +1,159 @@
 
-import { useState, useEffect } from 'react';
-import { toast } from '@/components/ui/use-toast';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/components/ui/use-toast';
 
-export type ChatMessage = {
+export interface ChatMessage {
   id: string;
+  content: string;
   sender_id: string;
   receiver_id: string;
-  content: string;
   sent_at: string;
   is_read: boolean;
-  related_entity_type?: string;
-  related_entity_id?: string;
-};
+}
 
-export type ChatPartner = {
+export interface ChatPartner {
   id: string;
   name: string;
-  avatarUrl?: string;
+  avatarUrl: string | null;
   unreadCount: number;
   lastMessage?: ChatMessage;
-};
+}
 
-export function useChat(partnerId?: string) {
+export const useChat = (partnerId: string) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [partnerInfo, setPartnerInfo] = useState<ChatPartner | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
-  // Fetch chat messages
-  const fetchMessages = async () => {
-    if (!partnerId) return;
+  // Fetch messages
+  useEffect(() => {
+    let isMounted = true;
     
-    setIsLoading(true);
-    setError(null);
+    const fetchMessages = async () => {
+      if (!partnerId) {
+        setIsLoading(false);
+        return;
+      }
+      
+      try {
+        setIsLoading(true);
+        
+        // Get current user first
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+        if (userError) {
+          console.error("Error getting user:", userError.message);
+          return;
+        }
+        
+        const userId = userData.user?.id;
+        if (!userId) {
+          console.error("No user ID found");
+          return;
+        }
+        
+        setCurrentUserId(userId);
+        
+        console.log(`Fetching messages between user ${userId} and partner ${partnerId}`);
+        
+        // Fetch messages where current user is either sender or receiver and partner is the other party
+        const { data, error } = await supabase
+          .from('messages')
+          .select('*')
+          .or(`and(sender_id.eq.${userId},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${userId})`)
+          .order('sent_at', { ascending: true });
+          
+        if (error) {
+          console.error("Error fetching messages:", error);
+          throw error;
+        }
+        
+        console.log(`Fetched ${data?.length || 0} messages`);
+        
+        if (isMounted) {
+          setMessages(data || []);
+          
+          // Mark messages as read
+          await supabase.rpc('mark_messages_as_read', {
+            p_conversation_partner_id: partnerId
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching messages:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load messages",
+          variant: "destructive"
+        });
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
     
-    try {
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        throw new Error('Not authenticated');
-      }
-      
-      console.log("Fetching messages between", user.id, "and", partnerId);
-      
-      // Fetch messages between current user and partner
-      const { data, error } = await supabase
-        .from('messages')
-        .select('*')
-        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${user.id})`)
-        .order('sent_at', { ascending: true });
-      
-      if (error) {
-        console.error("Error fetching messages:", error);
-        throw error;
-      }
-      
-      console.log("Fetched messages:", data);
-      setMessages(data as ChatMessage[]);
-      
-      // Mark messages as read
-      if (data.some(msg => msg.receiver_id === user.id && !msg.is_read)) {
-        await supabase.rpc('mark_messages_as_read', { p_conversation_partner_id: partnerId });
-      }
-    } catch (err) {
-      console.error('Error fetching messages:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load messages');
-      toast({
-        variant: "destructive",
-        title: "Error loading messages",
-        description: err instanceof Error ? err.message : 'Unknown error occurred'
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+    fetchMessages();
+    
+    // Set up real-time subscription for new messages
+    const channel = supabase
+      .channel('public:messages')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages'
+        },
+        (payload) => {
+          const newMessage = payload.new as ChatMessage;
+          
+          // Only add to messages if it's relevant to this conversation
+          if (
+            (newMessage.sender_id === partnerId || newMessage.receiver_id === partnerId) &&
+            (newMessage.sender_id === currentUserId || newMessage.receiver_id === currentUserId)
+          ) {
+            console.log("New message in conversation:", newMessage);
+            
+            setMessages(prev => [...prev, newMessage]);
+            
+            // Mark as read if the current user is the receiver
+            if (newMessage.receiver_id === currentUserId) {
+              supabase.rpc('mark_messages_as_read', {
+                p_conversation_partner_id: partnerId
+              });
+            }
+          }
+        }
+      )
+      .subscribe();
+    
+    return () => {
+      isMounted = false;
+      supabase.removeChannel(channel);
+    };
+  }, [partnerId]);
+  
   // Send a message
-  const sendMessage = async (content: string, relatedEntityType?: string, relatedEntityId?: string) => {
+  const sendMessage = useCallback(async (content: string) => {
+    if (!content.trim() || !partnerId || !currentUserId) {
+      return;
+    }
+    
     try {
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user || !partnerId) {
-        throw new Error('Cannot send message: Missing user or partner ID');
-      }
-      
-      console.log("Sending message from", user.id, "to", partnerId);
+      console.log(`Sending message from ${currentUserId} to ${partnerId}`);
       
       const newMessage = {
-        sender_id: user.id,
-        receiver_id: partnerId,
         content,
-        related_entity_type: relatedEntityType,
-        related_entity_id: relatedEntityId
+        sender_id: currentUserId,
+        receiver_id: partnerId,
+        is_read: false
       };
       
-      const { error, data } = await supabase
+      const { data, error } = await supabase
         .from('messages')
-        .insert([newMessage])
-        .select();
-      
+        .insert(newMessage)
+        .select()
+        .single();
+        
       if (error) {
         console.error("Error sending message:", error);
         throw error;
@@ -109,78 +161,16 @@ export function useChat(partnerId?: string) {
       
       console.log("Message sent successfully:", data);
       
-      // No need to manually update the messages array as real-time will handle this
-    } catch (err) {
-      console.error('Error sending message:', err);
+      // We don't need to update the messages state here since it will be handled by the realtime subscription
+    } catch (error) {
+      console.error('Error sending message:', error);
       toast({
-        variant: "destructive",
-        title: "Failed to send message",
-        description: err instanceof Error ? err.message : 'Unknown error occurred'
+        title: "Error",
+        description: "Failed to send message",
+        variant: "destructive"
       });
-      return false;
     }
-    
-    return true;
-  };
-
-  // Set up real-time subscription
-  useEffect(() => {
-    if (!partnerId) return;
-
-    const setupRealtime = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      console.log("Setting up realtime subscription for", user.id);
-
-      // Subscribe to new messages
-      const channel = supabase
-        .channel('public:messages')
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'messages',
-            filter: `receiver_id=eq.${user.id}`
-          },
-          (payload) => {
-            console.log("Received new message:", payload);
-            // Only add messages from the current chat partner
-            if (payload.new.sender_id === partnerId) {
-              setMessages(prev => [...prev, payload.new as ChatMessage]);
-              
-              // Mark as read immediately if we're viewing this chat
-              supabase.rpc('mark_messages_as_read', { p_conversation_partner_id: partnerId });
-            }
-          }
-        )
-        .subscribe();
-
-      // Cleanup on unmount
-      return () => {
-        supabase.removeChannel(channel);
-      };
-    };
-
-    setupRealtime();
-  }, [partnerId]);
-
-  // Fetch messages initially and when partner changes
-  useEffect(() => {
-    if (partnerId) {
-      fetchMessages();
-    } else {
-      setMessages([]);
-    }
-  }, [partnerId]);
-
-  return {
-    messages,
-    isLoading,
-    error,
-    sendMessage,
-    refreshMessages: fetchMessages,
-    partnerInfo
-  };
-}
+  }, [partnerId, currentUserId]);
+  
+  return { messages, isLoading, sendMessage };
+};

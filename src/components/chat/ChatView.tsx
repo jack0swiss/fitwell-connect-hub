@@ -5,6 +5,7 @@ import { MessageBubble } from './MessageBubble';
 import { ChatInput } from './ChatInput';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/components/ui/use-toast';
 
 interface ChatViewProps {
   partnerId: string;
@@ -14,11 +15,31 @@ export function ChatView({ partnerId }: ChatViewProps) {
   const { messages, isLoading, sendMessage } = useChat(partnerId);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
     const getCurrentUser = async () => {
-      const { data } = await supabase.auth.getUser();
-      setCurrentUserId(data.user?.id || null);
+      try {
+        console.log("Fetching current user...");
+        const { data, error } = await supabase.auth.getUser();
+        
+        if (error) {
+          console.error("Error getting user:", error.message);
+          toast({
+            title: "Authentication Error",
+            description: "Unable to retrieve your user information. Please try logging in again.",
+            variant: "destructive"
+          });
+          return;
+        }
+        
+        console.log("Current user data:", data.user);
+        setCurrentUserId(data.user?.id || null);
+      } catch (err) {
+        console.error("Unexpected error getting user:", err);
+      } finally {
+        setAuthChecked(true);
+      }
     };
     
     getCurrentUser();
@@ -33,7 +54,7 @@ export function ChatView({ partnerId }: ChatViewProps) {
 
   console.log("Chat view: current user:", currentUserId, "partner:", partnerId, "messages:", messages);
 
-  if (isLoading) {
+  if (isLoading || !authChecked) {
     return (
       <div className="flex flex-col h-full p-4 overflow-hidden">
         <div className="flex-1 overflow-y-auto space-y-4">
@@ -44,6 +65,14 @@ export function ChatView({ partnerId }: ChatViewProps) {
           ))}
         </div>
         <Skeleton className="h-24 w-full mt-4" />
+      </div>
+    );
+  }
+
+  if (!currentUserId) {
+    return (
+      <div className="flex flex-col h-full items-center justify-center">
+        <p className="text-muted-foreground">You need to be logged in to use chat.</p>
       </div>
     );
   }
@@ -69,7 +98,7 @@ export function ChatView({ partnerId }: ChatViewProps) {
       <div className="sticky bottom-0 left-0 right-0">
         <ChatInput 
           onSendMessage={sendMessage} 
-          disabled={!partnerId}
+          disabled={!partnerId || !currentUserId}
         />
       </div>
     </div>
