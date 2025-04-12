@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ExerciseLibrary } from '@/components/coach/ExerciseLibrary';
 import { toast } from '@/components/ui/use-toast';
+import { SettingsDropdown } from '@/components/SettingsDropdown';
 
 const CoachWorkouts = () => {
   const [activeTab, setActiveTab] = useState('plans');
@@ -20,9 +21,12 @@ const CoachWorkouts = () => {
 
   return (
     <div className="min-h-screen bg-fitwell-dark text-white pb-20">
-      <header className="sticky top-0 z-10 bg-card/80 backdrop-blur-sm border-b border-border/50 p-4">
-        <h1 className="text-xl font-bold mb-4">Workout Manager</h1>
-        
+      <header className="sticky top-0 z-10 bg-card/80 backdrop-blur-sm border-b border-border/50 p-4 flex justify-between items-center">
+        <h1 className="text-xl font-bold">Workout Manager</h1>
+        <SettingsDropdown />
+      </header>
+      
+      <div className="p-4">
         <Tabs 
           defaultValue="plans" 
           value={activeTab}
@@ -41,7 +45,7 @@ const CoachWorkouts = () => {
             </div>
           )}
         </Tabs>
-      </header>
+      </div>
       
       <main className="p-4 max-w-2xl mx-auto">
         <Tabs 

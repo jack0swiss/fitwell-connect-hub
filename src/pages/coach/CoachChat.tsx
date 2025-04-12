@@ -2,8 +2,8 @@
 import { useState } from 'react';
 import { ChatView } from '@/components/chat/ChatView';
 import { ConversationList } from '@/components/chat/ConversationList';
-import TabBar from '@/components/TabBar';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { CoachLayout } from '@/components/layouts/CoachLayout';
 
 const CoachChat = () => {
   const [selectedPartnerId, setSelectedPartnerId] = useState<string | undefined>();
@@ -18,12 +18,8 @@ const CoachChat = () => {
   };
   
   return (
-    <div className="min-h-screen bg-fitwell-dark text-white pb-20">
-      <header className="sticky top-0 z-10 bg-card/80 backdrop-blur-sm border-b border-border/50 p-4">
-        <h1 className="text-xl font-bold">Client Messages</h1>
-      </header>
-      
-      <main className="grid md:grid-cols-[300px_1fr] h-[calc(100vh-11rem)]">
+    <CoachLayout title="Client Messages">
+      <div className="grid md:grid-cols-[300px_1fr] h-[calc(100vh-11rem)]">
         {(!isMobile || showConversations) && (
           <div className="border-r border-border/50 overflow-y-auto">
             <ConversationList 
@@ -45,10 +41,8 @@ const CoachChat = () => {
             )}
           </div>
         )}
-      </main>
-      
-      <TabBar baseRoute="/coach" />
-    </div>
+      </div>
+    </CoachLayout>
   );
 };
 
