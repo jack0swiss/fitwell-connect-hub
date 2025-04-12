@@ -1,13 +1,38 @@
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 const Index = () => {
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
   
   useEffect(() => {
-    // Redirect to login page
-    navigate('/login');
+    // Check if user is authenticated
+    const checkSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session) {
+          // User is authenticated, get their role from metadata
+          const { data: { user } } = await supabase.auth.getUser();
+          const role = user?.user_metadata?.role || 'client';
+          
+          // Navigate to the appropriate dashboard
+          navigate(role === 'coach' ? '/coach' : '/client');
+        } else {
+          // User is not authenticated, redirect to login
+          navigate('/login');
+        }
+      } catch (error) {
+        console.error('Session check error:', error);
+        navigate('/login');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    checkSession();
   }, [navigate]);
 
   return (

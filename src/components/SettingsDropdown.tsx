@@ -10,26 +10,30 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useSupabaseClient } from "@supabase/auth-helpers-react";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 
 export function SettingsDropdown() {
   const navigate = useNavigate();
-  const supabaseClient = useSupabaseClient();
 
   const handleLogout = async () => {
     try {
-      await supabaseClient.auth.signOut();
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        throw error;
+      }
+      
       toast({
-        title: "Logged out successfully",
-        description: "You have been logged out of your account.",
+        title: "Erfolgreich abgemeldet",
+        description: "Sie wurden abgemeldet.",
       });
       navigate("/login");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error logging out:", error);
       toast({
-        title: "Error logging out",
-        description: "There was a problem logging out. Please try again.",
+        title: "Fehler beim Abmelden",
+        description: "Es gab ein Problem beim Abmelden. Bitte versuchen Sie es erneut.",
         variant: "destructive",
       });
     }
@@ -38,16 +42,16 @@ export function SettingsDropdown() {
   const handleHelp = () => {
     // Open help dialog
     toast({
-      title: "Help",
-      description: "Need assistance? Contact support at support@fitwell.com",
+      title: "Hilfe",
+      description: "Brauchen Sie Unterstützung? Kontaktieren Sie support@fitwell.com",
     });
   };
 
   const handleAbout = () => {
     // Show about/version info
     toast({
-      title: "About FitWell Connect",
-      description: "Version 1.0.0 - Created with ♥ for fitness enthusiasts",
+      title: "Über FitWell Connect",
+      description: "Version 1.0.0 - Mit ♥ erstellt für Fitness-Enthusiasten",
     });
   };
 
@@ -56,7 +60,7 @@ export function SettingsDropdown() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon">
           <Settings className="h-5 w-5" />
-          <span className="sr-only">Settings</span>
+          <span className="sr-only">Einstellungen</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
