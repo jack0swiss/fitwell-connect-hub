@@ -10,6 +10,8 @@ export interface ChatMessage {
   receiver_id: string;
   sent_at: string;
   is_read: boolean;
+  related_entity_type?: string;
+  related_entity_id?: string;
 }
 
 export interface ChatPartner {
@@ -133,9 +135,9 @@ export const useChat = (partnerId: string) => {
   }, [partnerId]);
   
   // Send a message
-  const sendMessage = useCallback(async (content: string) => {
+  const sendMessage = useCallback(async (content: string): Promise<boolean> => {
     if (!content.trim() || !partnerId || !currentUserId) {
-      return;
+      return false;
     }
     
     try {
@@ -160,6 +162,7 @@ export const useChat = (partnerId: string) => {
       }
       
       console.log("Message sent successfully:", data);
+      return true;
       
       // We don't need to update the messages state here since it will be handled by the realtime subscription
     } catch (error) {
@@ -169,6 +172,7 @@ export const useChat = (partnerId: string) => {
         description: "Failed to send message",
         variant: "destructive"
       });
+      return false;
     }
   }, [partnerId, currentUserId]);
   

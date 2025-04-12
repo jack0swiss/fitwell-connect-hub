@@ -3,11 +3,11 @@ import { useState } from 'react';
 import { ChatView } from '@/components/chat/ChatView';
 import { ConversationList } from '@/components/chat/ConversationList';
 import TabBar from '@/components/TabBar';
-import { useMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const CoachChat = () => {
   const [selectedPartnerId, setSelectedPartnerId] = useState<string | undefined>();
-  const isMobile = useMobile();
+  const isMobile = useIsMobile();
   const [showConversations, setShowConversations] = useState(true);
   
   const handleSelectPartner = (partnerId: string) => {
