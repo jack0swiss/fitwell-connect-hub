@@ -679,13 +679,12 @@ export type Database = {
     }
     Functions: {
       get_daily_nutrition_totals: {
-        Args: { user_id: string; log_date: string }
+        Args: Record<PropertyKey, never> | { user_id: string; log_date: string }
         Returns: {
           total_calories: number
           total_protein: number
-          total_carbs: number
-          total_fat: number
-          total_water_ml: number
+          total_fats: number
+          total_carbohydrates: number
         }[]
       }
       get_nutrition_adherence: {

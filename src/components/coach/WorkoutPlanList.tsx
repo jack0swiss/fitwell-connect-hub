@@ -21,12 +21,19 @@ export const WorkoutPlanList = () => {
     const fetchPlans = async () => {
       try {
         setLoading(true);
+        // Ensure we're using the Supabase client properly, which will automatically
+        // add the authentication token to requests
         const { data, error } = await supabase
           .from('workout_plans')
           .select('*')
           .order('created_at', { ascending: false });
           
-        if (error) throw error;
+        if (error) {
+          console.error('Error details:', error);
+          throw error;
+        }
+        
+        console.log('Workout plans fetched successfully:', data);
         setPlans(data || []);
       } catch (error) {
         console.error('Error fetching workout plans:', error);

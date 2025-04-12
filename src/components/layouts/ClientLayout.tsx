@@ -18,20 +18,26 @@ export function ClientLayout({ children, title }: ClientLayoutProps) {
     // Check if user is authenticated and has the client role
     const checkAuth = async () => {
       try {
+        console.log("Checking authentication in ClientLayout");
         const { data: { session } } = await supabase.auth.getSession();
         
         if (!session) {
           // Not authenticated, redirect to login
+          console.log("No session found, redirecting to login");
           navigate('/login');
           return;
         }
         
         // Check user role from metadata
         const { data: { user } } = await supabase.auth.getUser();
+        console.log("User data:", user);
+        
         const role = user?.user_metadata?.role;
+        console.log("User role:", role);
         
         // If not a client and specifically a coach, redirect to coach dashboard
         if (role === 'coach') {
+          console.log("User is a coach, redirecting to coach dashboard");
           navigate('/coach');
         }
       } catch (error) {

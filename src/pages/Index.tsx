@@ -11,17 +11,24 @@ const Index = () => {
     // Check if user is authenticated
     const checkSession = async () => {
       try {
+        console.log("Checking session in Index page");
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session) {
           // User is authenticated, get their role from metadata
+          console.log("Session found:", session);
+          
           const { data: { user } } = await supabase.auth.getUser();
+          console.log("User data:", user);
+          
           const role = user?.user_metadata?.role || 'client';
+          console.log("User role:", role);
           
           // Navigate to the appropriate dashboard
           navigate(role === 'coach' ? '/coach' : '/client');
         } else {
           // User is not authenticated, redirect to login
+          console.log("No session found, redirecting to login");
           navigate('/login');
         }
       } catch (error) {

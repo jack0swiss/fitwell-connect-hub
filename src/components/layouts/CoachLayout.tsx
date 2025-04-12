@@ -18,20 +18,26 @@ export function CoachLayout({ children, title }: CoachLayoutProps) {
     // Check if user is authenticated and has the coach role
     const checkAuth = async () => {
       try {
+        console.log("Checking authentication in CoachLayout");
         const { data: { session } } = await supabase.auth.getSession();
         
         if (!session) {
           // Not authenticated, redirect to login
+          console.log("No session found, redirecting to login");
           navigate('/login');
           return;
         }
         
         // Check user role from metadata
         const { data: { user } } = await supabase.auth.getUser();
+        console.log("User data:", user);
+        
         const role = user?.user_metadata?.role;
+        console.log("User role:", role);
         
         // If not a coach, redirect to client dashboard
         if (role !== 'coach') {
+          console.log("User is not a coach, redirecting to client dashboard");
           navigate('/client');
         }
       } catch (error) {
