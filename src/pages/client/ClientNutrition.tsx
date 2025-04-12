@@ -28,6 +28,7 @@ const ClientNutrition = () => {
     const fetchNutritionData = async () => {
       try {
         setLoading(true);
+        console.log("Fetching nutrition data for date:", formattedDate);
         
         // Fetch nutrition plan
         const { data: planData, error: planError } = await supabase
@@ -36,6 +37,7 @@ const ClientNutrition = () => {
           .maybeSingle();
           
         if (planError) throw planError;
+        console.log("Nutrition plan data:", planData);
         setNutritionPlan(planData);
         
         // Fetch nutrition logs for selected date
@@ -46,6 +48,7 @@ const ClientNutrition = () => {
           .order('created_at', { ascending: true });
           
         if (logsError) throw logsError;
+        console.log("Nutrition logs:", logsData);
         setNutritionLogs(logsData || []);
         
         // Fetch daily nutrition totals
@@ -55,14 +58,64 @@ const ClientNutrition = () => {
             log_date: formattedDate
           });
           
-        if (totalsError) throw totalsError;
-        setDailyTotals(totalsData?.length > 0 ? totalsData[0] : null);
+        if (totalsError) {
+          console.error('Error fetching totals:', totalsError);
+          throw totalsError;
+        }
+        
+        console.log("Raw totals data:", totalsData);
+        
+        // Map the data to match our expected type
+        if (totalsData?.length > 0) {
+          const rawData = totalsData[0];
+          
+          // Get water logs for the selected date
+          const { data: waterData, error: waterError } = await supabase
+            .from('water_logs')
+            .select('amount_ml')
+            .eq('date', formattedDate);
+            
+          if (waterError) throw waterError;
+          
+          // Calculate total water
+          const totalWater = waterData?.reduce((sum, log) => sum + (log.amount_ml || 0), 0) || 0;
+          
+          // Map the data to match our DailyNutritionTotals type
+          const mappedData: DailyNutritionTotals = {
+            total_calories: rawData.total_calories || 0,
+            total_protein: rawData.total_protein || 0,
+            total_carbs: rawData.total_carbohydrates || 0,
+            total_fat: rawData.total_fats || 0,
+            total_water_ml: totalWater
+          };
+          
+          console.log("Mapped nutrition totals:", mappedData);
+          setDailyTotals(mappedData);
+        } else {
+          // Set default values if no data is returned
+          setDailyTotals({
+            total_calories: 0,
+            total_protein: 0,
+            total_carbs: 0,
+            total_fat: 0,
+            total_water_ml: 0
+          });
+        }
       } catch (error) {
         console.error('Error fetching nutrition data:', error);
         toast({
           title: 'Error',
           description: 'Failed to load nutrition data',
           variant: 'destructive',
+        });
+        
+        // Set default values on error
+        setDailyTotals({
+          total_calories: 0,
+          total_protein: 0,
+          total_carbs: 0,
+          total_fat: 0,
+          total_water_ml: 0
         });
       } finally {
         setLoading(false);
@@ -75,6 +128,8 @@ const ClientNutrition = () => {
   const refreshData = () => {
     const fetchUpdatedTotals = async () => {
       try {
+        console.log("Refreshing nutrition data");
+        
         // Fetch updated nutrition logs
         const { data: logsData, error: logsError } = await supabase
           .from('nutrition_logs')
@@ -93,7 +148,42 @@ const ClientNutrition = () => {
           });
           
         if (totalsError) throw totalsError;
-        setDailyTotals(totalsData?.length > 0 ? totalsData[0] : null);
+        
+        // Map the data to match our expected type
+        if (totalsData?.length > 0) {
+          const rawData = totalsData[0];
+          
+          // Get water logs for the selected date
+          const { data: waterData, error: waterError } = await supabase
+            .from('water_logs')
+            .select('amount_ml')
+            .eq('date', formattedDate);
+            
+          if (waterError) throw waterError;
+          
+          // Calculate total water
+          const totalWater = waterData?.reduce((sum, log) => sum + (log.amount_ml || 0), 0) || 0;
+          
+          // Map the data to match our DailyNutritionTotals type
+          const mappedData: DailyNutritionTotals = {
+            total_calories: rawData.total_calories || 0,
+            total_protein: rawData.total_protein || 0,
+            total_carbs: rawData.total_carbohydrates || 0,
+            total_fat: rawData.total_fats || 0,
+            total_water_ml: totalWater
+          };
+          
+          setDailyTotals(mappedData);
+        } else {
+          // Set default values if no data is returned
+          setDailyTotals({
+            total_calories: 0,
+            total_protein: 0,
+            total_carbs: 0,
+            total_fat: 0,
+            total_water_ml: 0
+          });
+        }
       } catch (error) {
         console.error('Error refreshing nutrition data:', error);
       }
