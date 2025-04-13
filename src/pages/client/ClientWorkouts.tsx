@@ -1,12 +1,12 @@
 
 import React, { useState } from 'react';
-import TabBar from '@/components/TabBar';
 import { Workout, WorkoutLog } from '@/types/workout';
 import { WorkoutPlanView } from '@/components/client/WorkoutPlanView';
 import { WorkoutView } from '@/components/client/WorkoutView';
 import { WorkoutHistory } from '@/components/client/WorkoutHistory';
 import { WorkoutLogDetail } from '@/components/client/WorkoutLogDetail';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ClientLayout } from '@/components/layouts/ClientLayout';
 
 const ClientWorkouts = () => {
   const [activeTab, setActiveTab] = useState('plan');
@@ -29,11 +29,16 @@ const ClientWorkouts = () => {
     setSelectedLog(null);
   };
 
+  // Create a dynamic page title based on current view
+  const getPageTitle = () => {
+    if (selectedWorkout) return selectedWorkout.name;
+    if (selectedLog) return 'Workout Log';
+    return 'My Workouts';
+  };
+
   return (
-    <div className="min-h-screen bg-fitwell-dark text-white pb-20">
-      <header className="sticky top-0 z-10 bg-card/80 backdrop-blur-sm border-b border-border/50 p-4">
-        <h1 className="text-xl font-bold mb-4">My Workouts</h1>
-        
+    <ClientLayout title={getPageTitle()}>
+      <div className="p-4">
         {!selectedWorkout && !selectedLog && (
           <Tabs 
             defaultValue="plan" 
@@ -47,7 +52,7 @@ const ClientWorkouts = () => {
             </TabsList>
           </Tabs>
         )}
-      </header>
+      </div>
       
       <main className="p-4 max-w-2xl mx-auto">
         {selectedWorkout ? (
@@ -77,9 +82,7 @@ const ClientWorkouts = () => {
           </Tabs>
         )}
       </main>
-      
-      <TabBar baseRoute="/client" />
-    </div>
+    </ClientLayout>
   );
 };
 

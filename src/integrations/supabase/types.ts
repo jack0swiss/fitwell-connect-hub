@@ -696,15 +696,13 @@ export type Database = {
         }[]
       }
       get_workout_adherence: {
-        Args: { user_id: string; start_date: string; end_date: string }
-        Returns: {
-          completed_workouts: number
-          planned_workouts: number
-          adherence_percentage: number
-        }[]
+        Args:
+          | Record<PropertyKey, never>
+          | { user_id: string; start_date: string; end_date: string }
+        Returns: undefined
       }
       mark_messages_as_read: {
-        Args: { p_conversation_partner_id: string }
+        Args: Record<PropertyKey, never> | { p_conversation_partner_id: string }
         Returns: undefined
       }
     }

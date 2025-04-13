@@ -35,8 +35,8 @@ const Login = () => {
 
       // Successfully authenticated
       toast({
-        title: "Angemeldet",
-        description: "Sie wurden erfolgreich angemeldet.",
+        title: "Logged in",
+        description: "You have been successfully logged in.",
       });
       
       // Navigate to appropriate dashboard based on role
@@ -52,8 +52,8 @@ const Login = () => {
       if (error.message?.includes('email not confirmed') || 
           error.message?.includes('Invalid login credentials')) {
         toast({
-          title: "Anmeldung fehlgeschlagen",
-          description: "Möchten Sie sich registrieren?",
+          title: "Login failed",
+          description: "Would you like to register?",
           variant: "destructive",
           action: (
             <Button 
@@ -61,14 +61,14 @@ const Login = () => {
               onClick={() => handleSignUp()}
               className="bg-white text-black hover:bg-gray-100"
             >
-              Registrieren
+              Register
             </Button>
           ),
         });
       } else {
         toast({
-          title: "Anmeldung fehlgeschlagen",
-          description: error.message || "Bitte überprüfen Sie Ihre Anmeldedaten.",
+          title: "Login failed",
+          description: error.message || "Please check your credentials.",
           variant: "destructive",
         });
       }
@@ -98,15 +98,15 @@ const Login = () => {
       }
 
       toast({
-        title: "Registrierung erfolgreich",
-        description: "Bitte überprüfen Sie Ihre E-Mail für den Bestätigungslink.",
+        title: "Registration successful",
+        description: "Please check your email for the confirmation link.",
       });
       
     } catch (error: any) {
       console.error('Signup error:', error);
       toast({
-        title: "Registrierung fehlgeschlagen",
-        description: error.message || "Ein Fehler ist aufgetreten.",
+        title: "Registration failed",
+        description: error.message || "An error occurred.",
         variant: "destructive",
       });
     } finally {
@@ -124,8 +124,8 @@ const Login = () => {
         
         <Card className="bg-card/80 backdrop-blur-sm border-border/50">
           <CardHeader>
-            <CardTitle>Anmelden</CardTitle>
-            <CardDescription>Geben Sie Ihre Anmeldedaten ein</CardDescription>
+            <CardTitle>Login</CardTitle>
+            <CardDescription>Enter your credentials</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
@@ -147,7 +147,7 @@ const Login = () => {
                 <Input 
                   id="email" 
                   type="email" 
-                  placeholder="ihre@email.com"
+                  placeholder="your@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -156,7 +156,7 @@ const Login = () => {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="password">Passwort</Label>
+                <Label htmlFor="password">Password</Label>
                 <Input 
                   id="password" 
                   type="password"
@@ -172,13 +172,13 @@ const Login = () => {
                 className="w-full bg-fitwell-purple hover:bg-fitwell-purple/90"
                 disabled={isLoading}
               >
-                {isLoading ? "Wird angemeldet..." : "Anmelden"}
+                {isLoading ? "Logging in..." : "Login"}
               </Button>
             </form>
           </CardContent>
           <CardFooter className="flex justify-center border-t border-border/50 pt-4">
             <p className="text-sm text-muted-foreground">
-              Noch kein Konto? <Button variant="link" className="p-0 h-auto text-fitwell-purple" onClick={handleSignUp}>Registrieren</Button>
+              Don't have an account? <Button variant="link" className="p-0 h-auto text-fitwell-purple" onClick={handleSignUp}>Register</Button>
             </p>
           </CardFooter>
         </Card>

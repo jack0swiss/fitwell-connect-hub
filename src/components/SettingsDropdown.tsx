@@ -25,33 +25,31 @@ export function SettingsDropdown() {
       }
       
       toast({
-        title: "Erfolgreich abgemeldet",
-        description: "Sie wurden abgemeldet.",
+        title: "Successfully logged out",
+        description: "You have been logged out.",
       });
       navigate("/login");
     } catch (error: any) {
       console.error("Error logging out:", error);
       toast({
-        title: "Fehler beim Abmelden",
-        description: "Es gab ein Problem beim Abmelden. Bitte versuchen Sie es erneut.",
+        title: "Error logging out",
+        description: "There was a problem logging out. Please try again.",
         variant: "destructive",
       });
     }
   };
 
   const handleHelp = () => {
-    // Open help dialog
     toast({
-      title: "Hilfe",
-      description: "Brauchen Sie Unterstützung? Kontaktieren Sie support@fitwell.com",
+      title: "Help",
+      description: "Need assistance? Contact support@fitwell.com",
     });
   };
 
   const handleAbout = () => {
-    // Show about/version info
     toast({
-      title: "Über FitWell Connect",
-      description: "Version 1.0.0 - Mit ♥ erstellt für Fitness-Enthusiasten",
+      title: "About FitWell Connect",
+      description: "Version 1.0.0 - Created with ♥ for fitness enthusiasts",
     });
   };
 
@@ -60,24 +58,24 @@ export function SettingsDropdown() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon">
           <Settings className="h-5 w-5" />
-          <span className="sr-only">Einstellungen</span>
+          <span className="sr-only">Settings</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuLabel>Einstellungen</DropdownMenuLabel>
+        <DropdownMenuLabel>Settings</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleHelp}>
           <HelpCircle className="mr-2 h-4 w-4" />
-          <span>Hilfe</span>
+          <span>Help</span>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handleAbout}>
           <Info className="mr-2 h-4 w-4" />
-          <span>Über FitWell</span>
+          <span>About FitWell</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout}>
           <LogOut className="mr-2 h-4 w-4" />
-          <span>Abmelden</span>
+          <span>Logout</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
