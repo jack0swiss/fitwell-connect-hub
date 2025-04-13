@@ -12,7 +12,7 @@ interface WorkoutBuilderProps {
   initialWorkout?: Workout;
 }
 
-export const WorkoutBuilder = ({ planId, onBack, initialWorkout }: WorkoutBuilderProps) => {
+const WorkoutBuilder = ({ planId, onBack, initialWorkout }: WorkoutBuilderProps) => {
   const {
     form,
     exercises,
@@ -60,3 +60,5 @@ export const WorkoutBuilder = ({ planId, onBack, initialWorkout }: WorkoutBuilde
     </div>
   );
 };
+
+export default WorkoutBuilder;

@@ -5,7 +5,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Save, ArrowLeft } from 'lucide-react';
-import { ExerciseList } from './ExerciseList';
 import { weekDays } from '@/types/workout';
 import { WorkoutFormValues } from './useWorkoutBuilder';
 import { UseFormReturn } from 'react-hook-form';
@@ -27,7 +26,7 @@ export const WorkoutForm = ({
 }: WorkoutFormProps) => {
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit} className="space-y-4">
+      <form onSubmit={form.handleSubmit(form.handleSubmit.name)} className="space-y-4">
         <FormField
           control={form.control}
           name="name"

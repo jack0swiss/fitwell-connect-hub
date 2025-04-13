@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { WorkoutBuilder } from './WorkoutBuilder';
+import WorkoutBuilder from './WorkoutBuilder';
 import { Form } from '@/components/ui/form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
