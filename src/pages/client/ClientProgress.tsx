@@ -75,18 +75,30 @@ const ClientProgress = () => {
     }
   });
   
+  // Fetch current user ID
+  const getCurrentUserId = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    return user?.id;
+  };
+  
   // Fetch nutrition adherence data
   const { data: nutritionAdherenceData, isLoading: nutritionLoading } = useQuery({
     queryKey: ['nutritionAdherence', startDate, endDate],
     queryFn: async () => {
+      const userId = await getCurrentUserId();
+      if (!userId) return null;
+      
       const { data, error } = await supabase
         .rpc('get_nutrition_adherence', {
-          user_id: (await supabase.auth.getUser()).data.user?.id,
+          user_id: userId,
           start_date: startDate,
           end_date: endDate
         });
         
-      if (error) throw error;
+      if (error) {
+        console.error('Nutrition adherence error:', error);
+        return null;
+      }
       return data as unknown as NutritionAdherence;
     }
   });
@@ -95,14 +107,20 @@ const ClientProgress = () => {
   const { data: workoutAdherenceData, isLoading: workoutLoading } = useQuery({
     queryKey: ['workoutAdherence', startDate, endDate],
     queryFn: async () => {
+      const userId = await getCurrentUserId();
+      if (!userId) return null;
+      
       const { data, error } = await supabase
         .rpc('get_workout_adherence', {
-          user_id: (await supabase.auth.getUser()).data.user?.id,
+          user_id: userId,
           start_date: startDate,
           end_date: endDate
         });
         
-      if (error) throw error;
+      if (error) {
+        console.error('Workout adherence error:', error);
+        return null;
+      }
       return data as unknown as WorkoutAdherence;
     }
   });

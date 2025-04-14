@@ -698,7 +698,7 @@ export type Database = {
       get_workout_adherence: {
         Args:
           | Record<PropertyKey, never>
-          | { user_id: string; start_date: string; end_date: string }
+          | { user_id?: string; start_date?: string; end_date?: string }
         Returns: undefined
       }
       mark_messages_as_read: {
