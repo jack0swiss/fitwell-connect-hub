@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -42,34 +41,6 @@ export function ClientManagementDialog() {
     setIsSubmitting(true);
     
     try {
-      // First check if the user already exists
-      const { data: existingUsers, error: searchError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', formData.email)
-        .limit(1);
-      
-      if (searchError) {
-        console.error('Error checking existing user:', searchError);
-        toast({
-          title: "Error",
-          description: "Failed to check if user exists. Please try again.",
-          variant: "destructive",
-        });
-        setIsSubmitting(false);
-        return;
-      }
-      
-      if (existingUsers && existingUsers.length > 0) {
-        toast({
-          title: "Error",
-          description: "A user with this email already exists.",
-          variant: "destructive",
-        });
-        setIsSubmitting(false);
-        return;
-      }
-      
       // Create auth user with email and password
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
@@ -78,44 +49,35 @@ export function ClientManagementDialog() {
           data: {
             role: 'client',
             first_name: formData.firstName,
-            last_name: formData.lastName
+            last_name: formData.lastName,
+            phone: formData.phone
           }
         }
       });
 
       if (authError) {
-        // Handle specific error for already registered user
         if (authError.message?.includes('already registered')) {
           toast({
             title: "Error",
             description: "This email is already registered in the system.",
             variant: "destructive",
           });
-          setIsSubmitting(false);
-          return;
+        } else {
+          console.error('Auth error:', authError);
+          toast({
+            title: "Error",
+            description: "Failed to create client account. Please try again.",
+            variant: "destructive",
+          });
         }
-        throw authError;
+        return;
       }
 
       if (authData.user) {
-        // Create profile entry
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            id: authData.user.id,
-            first_name: formData.firstName,
-            last_name: formData.lastName,
-            email: formData.email,
-            phone: formData.phone
-          });
-
-        if (profileError) throw profileError;
-
         toast({
           title: "Success",
           description: "Client created successfully",
         });
-        
         resetForm();
         setIsOpen(false);
       }
