@@ -25,15 +25,19 @@ const Index = () => {
           console.log("User role:", role);
           
           // Navigate to the appropriate dashboard
-          navigate(role === 'coach' ? '/coach' : '/client');
+          if (role === 'coach') {
+            navigate('/coach', { replace: true });
+          } else {
+            navigate('/client', { replace: true });
+          }
         } else {
           // User is not authenticated, redirect to login
           console.log("No session found, redirecting to login");
-          navigate('/login');
+          navigate('/login', { replace: true });
         }
       } catch (error) {
         console.error('Session check error:', error);
-        navigate('/login');
+        navigate('/login', { replace: true });
       } finally {
         setLoading(false);
       }

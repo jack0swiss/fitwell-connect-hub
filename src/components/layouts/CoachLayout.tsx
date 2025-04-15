@@ -15,6 +15,8 @@ export function CoachLayout({ children, title }: CoachLayoutProps) {
   const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
+    let isMounted = true;
+    
     // Check if user is authenticated and has the coach role
     const checkAuth = async () => {
       try {
@@ -36,19 +38,28 @@ export function CoachLayout({ children, title }: CoachLayoutProps) {
         console.log("User role:", role);
         
         // If not a coach, redirect to client dashboard
-        if (role !== 'coach') {
+        if (role !== 'coach' && isMounted) {
           console.log("User is not a coach, redirecting to client dashboard");
-          navigate('/client');
+          navigate('/client', { replace: true });
+          return;
         }
       } catch (error) {
         console.error('Auth check error:', error);
-        navigate('/login');
+        if (isMounted) {
+          navigate('/login');
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
     
     checkAuth();
+    
+    return () => {
+      isMounted = false;
+    };
   }, [navigate]);
   
   if (isLoading) {

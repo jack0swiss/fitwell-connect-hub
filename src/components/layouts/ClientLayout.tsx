@@ -15,6 +15,8 @@ export function ClientLayout({ children, title }: ClientLayoutProps) {
   const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
+    let isMounted = true;
+    
     // Check if user is authenticated and has the client role
     const checkAuth = async () => {
       try {
@@ -36,19 +38,28 @@ export function ClientLayout({ children, title }: ClientLayoutProps) {
         console.log("User role:", role);
         
         // If not a client and specifically a coach, redirect to coach dashboard
-        if (role === 'coach') {
+        if (role === 'coach' && isMounted) {
           console.log("User is a coach, redirecting to coach dashboard");
-          navigate('/coach');
+          navigate('/coach', { replace: true });
+          return;
         }
       } catch (error) {
         console.error('Auth check error:', error);
-        navigate('/login');
+        if (isMounted) {
+          navigate('/login');
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
     
     checkAuth();
+    
+    return () => {
+      isMounted = false;
+    };
   }, [navigate]);
   
   if (isLoading) {

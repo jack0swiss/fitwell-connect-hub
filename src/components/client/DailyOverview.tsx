@@ -35,11 +35,11 @@ const DailyOverview = ({
   const navigate = useNavigate();
 
   const handleStartWorkout = () => {
-    navigate('/client/workouts');
+    navigate('/client/workouts', { replace: true });
   };
 
   const handleLogMeal = () => {
-    navigate('/client/nutrition');
+    navigate('/client/nutrition', { replace: true });
   };
 
   return (

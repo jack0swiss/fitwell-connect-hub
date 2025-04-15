@@ -117,7 +117,7 @@ const App = () => {
     return () => {
       subscription.unsubscribe();
     };
-  }, [queryClient]);
+  }, []);
 
   if (!isInitialized) {
     return (
@@ -138,7 +138,13 @@ const App = () => {
         <BrowserRouter>
           <Routes>
             {/* Public Routes */}
-            <Route path="/login" element={<Login />} />
+            <Route path="/login" element={
+              authUser ? (
+                <Navigate to={authUser.user_metadata?.role === 'coach' ? '/coach' : '/client'} replace />
+              ) : (
+                <Login />
+              )
+            } />
             <Route path="/" element={<Index />} />
 
             {/* Coach Routes */}
