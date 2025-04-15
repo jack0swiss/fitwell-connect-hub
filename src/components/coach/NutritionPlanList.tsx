@@ -1,9 +1,9 @@
 
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Edit, User, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { NutritionPlan } from '@/types/nutrition';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
@@ -16,58 +16,42 @@ interface NutritionPlanListProps {
 type ClientWithPlan = {
   id: string;
   name: string;
+  email: string;
   plan?: NutritionPlan;
 };
 
 const NutritionPlanList = ({ searchQuery, onClientSelect }: NutritionPlanListProps) => {
-  const [clients, setClients] = useState<ClientWithPlan[]>([]);
-  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  
-  // Mock data for now - would come from a profiles table
-  useEffect(() => {
-    const fetchClients = async () => {
-      setLoading(true);
-      
-      // In a real implementation, this would fetch from a profiles table
-      // and join with nutrition_plans
-      // For now, we'll use mock data
-      const mockClients: ClientWithPlan[] = [
-        { id: '1', name: 'Sarah Johnson' },
-        { id: '2', name: 'Michael Chen' },
-        { id: '3', name: 'Emma Rodriguez' }
-      ];
-      
-      try {
-        // Fetch nutrition plans for each client
-        const { data: plans, error } = await supabase
-          .from('nutrition_plans')
-          .select('*');
-          
-        if (error) throw error;
-        
-        // Attach plans to clients
-        if (plans) {
-          for (const client of mockClients) {
-            const clientPlan = plans.find(p => p.client_id === client.id);
-            if (clientPlan) client.plan = clientPlan;
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching nutrition plans:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to load nutrition plans',
-          variant: 'destructive',
-        });
-      } finally {
-        setLoading(false);
-        setClients(mockClients);
-      }
-    };
-    
-    fetchClients();
-  }, []);
+
+  const { data: clients, isLoading } = useQuery({
+    queryKey: ['clientsWithNutritionPlans'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      // Get all clients for this coach
+      const { data: clients, error: clientsError } = await supabase
+        .from('profiles')
+        .select('id, name, email')
+        .eq('coach_id', user.id);
+
+      if (clientsError) throw clientsError;
+
+      // Get nutrition plans for these clients
+      const { data: plans, error: plansError } = await supabase
+        .from('nutrition_plans')
+        .select('*')
+        .in('client_id', clients.map(c => c.id));
+
+      if (plansError) throw plansError;
+
+      // Combine clients with their plans
+      return clients.map(client => ({
+        ...client,
+        plan: plans.find(p => p.client_id === client.id)
+      }));
+    }
+  });
   
   const handleEditPlan = (clientId: string, planId?: string) => {
     if (planId) {
@@ -77,11 +61,12 @@ const NutritionPlanList = ({ searchQuery, onClientSelect }: NutritionPlanListPro
     }
   };
   
-  const filteredClients = clients.filter(client => 
-    client.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredClients = clients?.filter(client => 
+    client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    client.email.toLowerCase().includes(searchQuery.toLowerCase())
+  ) || [];
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex justify-center py-8">
         <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-fitwell-purple"></div>

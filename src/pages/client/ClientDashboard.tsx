@@ -11,6 +11,23 @@ const ClientDashboard = () => {
   const { dashboardData, loading } = useDashboardData();
 
   useEffect(() => {
+    const fetchUnreadCount = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data } = await supabase
+        .from('unread_message_counts')
+        .select('unread_count')
+        .eq('user_id', user.id);
+
+      if (data) {
+        const totalUnread = data.reduce((sum, item) => sum + (item.unread_count || 0), 0);
+        setUnreadMessages(totalUnread);
+      }
+    };
+
+    fetchUnreadCount();
+
     // Subscribe to message updates
     const channel = supabase
       .channel('public:messages')
@@ -22,21 +39,6 @@ const ClientDashboard = () => {
           table: 'messages'
         },
         () => {
-          // Update unread message count here
-          const fetchUnreadCount = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
-
-            const { data } = await supabase
-              .from('unread_message_counts')
-              .select('unread_count')
-              .eq('user_id', user.id);
-
-            if (data) {
-              const totalUnread = data.reduce((sum, item) => sum + (item.unread_count || 0), 0);
-              setUnreadMessages(totalUnread);
-            }
-          };
           fetchUnreadCount();
         }
       )
