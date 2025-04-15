@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { WorkoutExercise, Workout } from '@/types/workout';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,10 +17,7 @@ export function useWorkoutSubmission({
 }: UseWorkoutSubmissionProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async (
-    values: WorkoutFormValues, 
-    exercises: WorkoutExercise[]
-  ) => {
+  const handleSubmit = async (values: WorkoutFormValues) => {
     try {
       setIsSubmitting(true);
 

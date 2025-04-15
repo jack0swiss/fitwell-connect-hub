@@ -1,6 +1,6 @@
 
 import { useEffect } from 'react';
-import { Workout, WorkoutExercise } from '@/types/workout';
+import { Workout } from '@/types/workout';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
 import { useWorkoutForm } from './hooks/useWorkoutForm';
@@ -53,9 +53,9 @@ export function useWorkoutBuilder({
     }
   }, [initialWorkout]);
 
-  const onSubmit = form.handleSubmit((values) => 
-    submission.handleSubmit(values, exerciseList.exercises)
-  );
+  const onSubmit = (values: any) => {
+    submission.handleSubmit(values);
+  };
 
   return {
     form,
