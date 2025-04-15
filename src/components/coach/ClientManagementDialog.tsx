@@ -24,11 +24,33 @@ export function ClientManagementDialog() {
     phone: '',
     password: ''
   });
+  const [isOpen, setIsOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
     
     try {
+      // First check if the user already exists
+      const { data: existingUsers, error: searchError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', formData.email)
+        .limit(1);
+      
+      if (searchError) throw searchError;
+      
+      if (existingUsers && existingUsers.length > 0) {
+        toast({
+          title: "Error",
+          description: "A user with this email already exists.",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+      
       // Create auth user with email and password
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
@@ -42,7 +64,19 @@ export function ClientManagementDialog() {
         }
       });
 
-      if (authError) throw authError;
+      if (authError) {
+        // Handle specific error for already registered user
+        if (authError.message?.includes('already registered')) {
+          toast({
+            title: "Error",
+            description: "This email is already registered in the system.",
+            variant: "destructive",
+          });
+          setIsSubmitting(false);
+          return;
+        }
+        throw authError;
+      }
 
       if (authData.user) {
         // Create profile entry
@@ -62,6 +96,16 @@ export function ClientManagementDialog() {
           title: "Success",
           description: "Client created successfully",
         });
+        
+        // Reset form and close dialog
+        setFormData({
+          firstName: '',
+          lastName: '',
+          email: '',
+          phone: '',
+          password: ''
+        });
+        setIsOpen(false);
       }
     } catch (error) {
       console.error('Error creating client:', error);
@@ -70,13 +114,15 @@ export function ClientManagementDialog() {
         description: "Failed to create client. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="default" className="gap-2">
+        <Button variant="default" className="gap-2" onClick={() => setIsOpen(true)}>
           <UserPlus className="h-4 w-4" />
           Add New Client
         </Button>
@@ -123,6 +169,7 @@ export function ClientManagementDialog() {
               onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
               required
               minLength={6}
+              autoComplete="current-password"
             />
           </div>
           <div className="grid gap-2">
@@ -134,7 +181,9 @@ export function ClientManagementDialog() {
               onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
             />
           </div>
-          <Button type="submit" className="w-full">Add Client</Button>
+          <Button type="submit" className="w-full" disabled={isSubmitting}>
+            {isSubmitting ? 'Adding...' : 'Add Client'}
+          </Button>
         </form>
       </DialogContent>
     </Dialog>
