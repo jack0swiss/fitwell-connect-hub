@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { 
@@ -43,13 +42,12 @@ const CoachProgress = () => {
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState<'week' | 'month' | 'quarter'>('month');
 
-  const { data: clients, isLoading } = useQuery({
+  const { clients, isLoading } = useQuery({
     queryKey: ['clientProgress'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      // First get all clients assigned to this coach through workout assignments
       const { data: assignmentsData, error: assignmentsError } = await supabase
         .from('workout_assignments')
         .select('client_id')
@@ -57,30 +55,27 @@ const CoachProgress = () => {
 
       if (assignmentsError) throw assignmentsError;
 
-      // Extract unique client IDs
       const clientIds = [...new Set(assignmentsData.map(a => a.client_id))].filter(Boolean);
       
       if (!clientIds.length) return [];
 
-      // For each client, get their workout and nutrition adherence
       const clientsWithProgress = await Promise.all(clientIds.map(async (clientId) => {
         if (!clientId) return null;
         
-        // Get workout adherence
-        const { data: workoutData } = await supabase.rpc('get_workout_adherence', {
+        const workoutData = await supabase.rpc('get_workout_adherence', {
           user_id: clientId,
           start_date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
           end_date: new Date().toISOString()
         });
 
-        // Get nutrition adherence
+        const adherencePercentage = workoutData?.data?.[0]?.adherence_percentage || 0;
+
         const { data: nutritionData } = await supabase.rpc('get_nutrition_adherence', {
           user_id: clientId,
           start_date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
           end_date: new Date().toISOString()
         });
 
-        // Get last active timestamp
         const { data: lastActive } = await supabase
           .from('workout_logs')
           .select('created_at')
@@ -91,15 +86,14 @@ const CoachProgress = () => {
 
         return {
           id: clientId,
-          name: `Client ${clientId.substring(0, 6)}`, // Using partial ID as a placeholder
-          email: "client@example.com", // Placeholder email
-          workout_adherence: workoutData?.[0]?.adherence_percentage || 0,
+          name: `Client ${clientId.substring(0, 6)}`,
+          email: "client@example.com",
+          workout_adherence: adherencePercentage,
           nutrition_adherence: nutritionData?.[0]?.calorie_adherence_percentage || 0,
           last_active: lastActive?.created_at || 'Never'
         };
       }));
 
-      // Filter out any null values that might have occurred
       return clientsWithProgress.filter(Boolean) as ClientProgress[];
     }
   });
