@@ -1,8 +1,10 @@
+
 import { useState } from 'react';
 import { WorkoutExercise, Workout } from '@/types/workout';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
 import { WorkoutFormValues } from './useWorkoutForm';
+import { useExerciseList } from './useExerciseList';
 
 interface UseWorkoutSubmissionProps {
   planId: string | null;
@@ -16,6 +18,7 @@ export function useWorkoutSubmission({
   onBack 
 }: UseWorkoutSubmissionProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { exercises } = useExerciseList(initialWorkout ? [] : []);
 
   const handleSubmit = async (values: WorkoutFormValues) => {
     try {
