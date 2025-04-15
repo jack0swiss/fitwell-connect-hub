@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
@@ -30,6 +29,18 @@ export const useDashboardData = () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error('Not authenticated');
+
+        // Fetch user's first name from profiles table
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('first_name')
+          .eq('id', user.id)
+          .single();
+
+        if (profileError) {
+          console.error('Error fetching profile:', profileError);
+          throw profileError;
+        }
 
         // Get nutrition data for today
         const { data: nutritionData } = await supabase.rpc('get_daily_nutrition_totals', {
@@ -103,7 +114,7 @@ export const useDashboardData = () => {
         }
 
         return {
-          name: user.user_metadata?.name || 'Client',
+          name: profileData?.first_name || user.user_metadata?.first_name || 'Client',
           motivationalQuote: "Keep pushing forward! Every step counts.",
           workout: {
             title: todayWorkout?.name || 'Rest Day',
