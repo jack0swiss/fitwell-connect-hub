@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { UserPlus } from "lucide-react";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { supabase } from '@/integrations/supabase/client';
 
 interface ClientFormData {
@@ -13,6 +13,7 @@ interface ClientFormData {
   lastName: string;
   email: string;
   phone: string;
+  password: string;
 }
 
 export function ClientManagementDialog() {
@@ -20,17 +21,18 @@ export function ClientManagementDialog() {
     firstName: '',
     lastName: '',
     email: '',
-    phone: ''
+    phone: '',
+    password: ''
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     try {
-      // Create auth user with email
+      // Create auth user with email and password
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
-        password: Math.random().toString(36).slice(-8), // Generate random password
+        password: formData.password,
         options: {
           data: {
             role: 'client',
@@ -58,7 +60,7 @@ export function ClientManagementDialog() {
 
         toast({
           title: "Success",
-          description: "Client created successfully. They will receive an email to set their password.",
+          description: "Client created successfully",
         });
       }
     } catch (error) {
@@ -110,6 +112,17 @@ export function ClientManagementDialog() {
               value={formData.email}
               onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
               required
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="password">Password</Label>
+            <Input
+              id="password"
+              type="password"
+              value={formData.password}
+              onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+              required
+              minLength={6}
             />
           </div>
           <div className="grid gap-2">
