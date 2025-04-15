@@ -5,7 +5,7 @@ import { WorkoutPlan, WorkoutAssignment } from '@/types/workout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Calendar, Check, User, X } from 'lucide-react';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from '@/components/ui/use-toast';
 
@@ -21,11 +21,12 @@ type Client = {
   avatarUrl?: string;
   isAssigned?: boolean;
   assignmentId?: string;
+  assignmentStartDate?: string;
+  assignmentEndDate?: string;
 };
 
 export const WorkoutPlanAssignment = ({ plan, onBack }: WorkoutPlanAssignmentProps) => {
   const [clients, setClients] = useState<Client[]>([]);
-  const [assignments, setAssignments] = useState<WorkoutAssignment[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -41,7 +42,7 @@ export const WorkoutPlanAssignment = ({ plan, onBack }: WorkoutPlanAssignmentPro
           { id: '3', name: 'Emma Rodriguez', email: 'emma@example.com' },
         ];
         
-        // Fetch assignments for this plan
+        // Fetch existing assignments for this plan
         const { data: assignmentsData, error: assignmentsError } = await supabase
           .from('workout_assignments')
           .select('*')
@@ -56,11 +57,12 @@ export const WorkoutPlanAssignment = ({ plan, onBack }: WorkoutPlanAssignmentPro
             ...client,
             isAssigned: !!assignment,
             assignmentId: assignment?.id,
+            assignmentStartDate: assignment?.start_date,
+            assignmentEndDate: assignment?.end_date
           };
         });
         
         setClients(clientsWithAssignments);
-        setAssignments(assignmentsData || []);
       } catch (error) {
         console.error('Error fetching clients and assignments:', error);
         toast({
@@ -90,7 +92,7 @@ export const WorkoutPlanAssignment = ({ plan, onBack }: WorkoutPlanAssignmentPro
           
           setClients(clients.map(c => 
             c.id === client.id 
-              ? { ...c, isAssigned: false, assignmentId: undefined } 
+              ? { ...c, isAssigned: false, assignmentId: undefined, assignmentStartDate: undefined, assignmentEndDate: undefined } 
               : c
           ));
           
@@ -100,13 +102,13 @@ export const WorkoutPlanAssignment = ({ plan, onBack }: WorkoutPlanAssignmentPro
           });
         }
       } else {
-        // Create assignment
+        // Create new assignment starting today
         const { data, error } = await supabase
           .from('workout_assignments')
           .insert({
             plan_id: plan.id,
             client_id: client.id,
-            start_date: new Date().toISOString(),
+            start_date: new Date().toISOString()
           })
           .select()
           .single();
@@ -115,7 +117,13 @@ export const WorkoutPlanAssignment = ({ plan, onBack }: WorkoutPlanAssignmentPro
         
         setClients(clients.map(c => 
           c.id === client.id 
-            ? { ...c, isAssigned: true, assignmentId: data.id } 
+            ? { 
+                ...c, 
+                isAssigned: true, 
+                assignmentId: data.id,
+                assignmentStartDate: data.start_date,
+                assignmentEndDate: data.end_date
+              } 
             : c
         ));
         
@@ -164,7 +172,7 @@ export const WorkoutPlanAssignment = ({ plan, onBack }: WorkoutPlanAssignmentPro
             )}
             <div className="text-xs text-muted-foreground mt-2 flex items-center">
               <Calendar className="h-3 w-3 mr-1" />
-              <span>Created {formatDistanceToNow(new Date(plan.created_at), { addSuffix: true })}</span>
+              <span>Created {format(new Date(plan.created_at), 'PPP')}</span>
             </div>
           </div>
           
@@ -192,6 +200,11 @@ export const WorkoutPlanAssignment = ({ plan, onBack }: WorkoutPlanAssignmentPro
                     <div>
                       <h4 className="font-medium">{client.name}</h4>
                       <p className="text-xs text-muted-foreground">{client.email}</p>
+                      {client.assignmentStartDate && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Assigned since: {format(new Date(client.assignmentStartDate), 'PPP')}
+                        </p>
+                      )}
                     </div>
                   </div>
                   <Button
@@ -220,3 +233,4 @@ export const WorkoutPlanAssignment = ({ plan, onBack }: WorkoutPlanAssignmentPro
     </div>
   );
 };
+
