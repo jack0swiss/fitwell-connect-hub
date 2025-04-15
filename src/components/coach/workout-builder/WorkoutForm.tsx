@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Save, ArrowLeft } from 'lucide-react';
 import { weekDays } from '@/types/workout';
-import { WorkoutFormValues } from './useWorkoutBuilder';
+import { WorkoutFormValues } from './hooks/useWorkoutForm';
 import { UseFormReturn } from 'react-hook-form';
 
 interface WorkoutFormProps {
