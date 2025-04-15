@@ -27,6 +27,16 @@ export function ClientManagementDialog() {
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const resetForm = () => {
+    setFormData({
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      password: ''
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -39,7 +49,16 @@ export function ClientManagementDialog() {
         .eq('email', formData.email)
         .limit(1);
       
-      if (searchError) throw searchError;
+      if (searchError) {
+        console.error('Error checking existing user:', searchError);
+        toast({
+          title: "Error",
+          description: "Failed to check if user exists. Please try again.",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
       
       if (existingUsers && existingUsers.length > 0) {
         toast({
@@ -97,14 +116,7 @@ export function ClientManagementDialog() {
           description: "Client created successfully",
         });
         
-        // Reset form and close dialog
-        setFormData({
-          firstName: '',
-          lastName: '',
-          email: '',
-          phone: '',
-          password: ''
-        });
+        resetForm();
         setIsOpen(false);
       }
     } catch (error) {
@@ -120,7 +132,10 @@ export function ClientManagementDialog() {
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      setIsOpen(open);
+      if (!open) resetForm();
+    }}>
       <DialogTrigger asChild>
         <Button variant="default" className="gap-2" onClick={() => setIsOpen(true)}>
           <UserPlus className="h-4 w-4" />
@@ -169,7 +184,7 @@ export function ClientManagementDialog() {
               onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
               required
               minLength={6}
-              autoComplete="current-password"
+              autoComplete="new-password"
             />
           </div>
           <div className="grid gap-2">
