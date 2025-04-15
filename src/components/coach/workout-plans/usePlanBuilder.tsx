@@ -61,7 +61,8 @@ export function usePlanBuilder({ initialPlan, onBack }: UsePlanBuilderProps) {
     }
   }, [initialPlan]);
 
-  const handleSubmit = async (values: PlanFormValues) => {
+  // This is the internal form submission handler
+  const handleFormSubmit = async (values: PlanFormValues) => {
     try {
       setIsSubmitting(true);
       console.log('Saving plan with values:', values);
@@ -171,7 +172,7 @@ export function usePlanBuilder({ initialPlan, onBack }: UsePlanBuilderProps) {
     setSelectedWorkout,
     isCreatingWorkout,
     setIsCreatingWorkout,
-    onSubmit: handleSubmit,
+    onSubmit: handleFormSubmit,
     handleWorkoutSaved
   };
 }
