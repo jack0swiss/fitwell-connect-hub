@@ -29,27 +29,60 @@ import ClientChat from "./pages/client/ClientChat";
 
 const queryClient = new QueryClient();
 
-const ProtectedRoute = ({ children, allowedRole }: { children: React.ReactNode; allowedRole: 'coach' | 'client' }) => {
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+  allowedRole: 'coach' | 'client';
+}
+
+const ProtectedRoute = ({ children, allowedRole }: ProtectedRouteProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAllowed, setIsAllowed] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    const checkRole = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      const userRole = user?.user_metadata?.role || 'client';
-      setIsAllowed(userRole === allowedRole);
-      setIsLoading(false);
+    const checkAuth = async () => {
+      try {
+        // Get the session
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+          console.log("No session found, redirecting to login");
+          setIsAuthenticated(false);
+          setIsLoading(false);
+          return;
+        }
+        
+        setIsAuthenticated(true);
+        
+        // Get user role from metadata
+        const { data: { user } } = await supabase.auth.getUser();
+        const userRole = user?.user_metadata?.role || 'client';
+        console.log("User has role:", userRole, "Allowed role:", allowedRole);
+        
+        setIsAllowed(userRole === allowedRole);
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error checking auth:", error);
+        setIsAuthenticated(false);
+        setIsLoading(false);
+      }
     };
     
-    checkRole();
+    checkAuth();
   }, [allowedRole]);
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <div className="min-h-screen flex items-center justify-center bg-fitwell-dark">
+      <div className="text-white">Loading...</div>
+    </div>;
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
   }
 
   if (!isAllowed) {
-    return <Navigate to={`/${allowedRole === 'coach' ? 'client' : 'coach'}`} replace />;
+    return <Navigate to={allowedRole === 'coach' ? '/client' : '/coach'} replace />;
   }
 
   return <>{children}</>;
@@ -57,18 +90,29 @@ const ProtectedRoute = ({ children, allowedRole }: { children: React.ReactNode; 
 
 const App = () => {
   const [isInitialized, setIsInitialized] = useState(false);
+  const [authUser, setAuthUser] = useState<any>(null);
 
   useEffect(() => {
+    // Initial auth check
+    const checkInitialAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setAuthUser(session?.user || null);
+      setIsInitialized(true);
+    };
+    
+    checkInitialAuth();
+    
+    // Subscribe to auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         console.log('Auth state changed:', event, session?.user?.id);
+        setAuthUser(session?.user || null);
+        
         if (event === 'SIGNED_OUT') {
           queryClient.clear();
         }
       }
     );
-
-    setIsInitialized(true);
 
     return () => {
       subscription.unsubscribe();

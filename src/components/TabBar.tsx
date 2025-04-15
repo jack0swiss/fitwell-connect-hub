@@ -1,6 +1,6 @@
 
 import { Home, Dumbbell, Utensils, TrendingUp, MessageCircle } from 'lucide-react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
 interface TabBarProps {
@@ -8,9 +8,6 @@ interface TabBarProps {
 }
 
 const TabBar = ({ baseRoute }: TabBarProps) => {
-  const location = useLocation();
-  const currentPath = location.pathname;
-  
   const tabs = [
     { 
       icon: Home, 
@@ -39,13 +36,6 @@ const TabBar = ({ baseRoute }: TabBarProps) => {
       path: `${baseRoute}/chat` 
     },
   ];
-  
-  const isActive = (path: string, exact = false) => {
-    if (exact) {
-      return currentPath === path;
-    }
-    return currentPath.startsWith(path);
-  };
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50">
@@ -55,8 +45,8 @@ const TabBar = ({ baseRoute }: TabBarProps) => {
             key={tab.path}
             to={tab.path}
             className={({ isActive }) => cn(
-              "flex flex-col items-center justify-center gap-1",
-              isActive ? "tab-active text-primary" : "tab-inactive text-muted-foreground"
+              "flex flex-col items-center justify-center gap-1 transition-colors",
+              isActive ? "text-primary" : "text-muted-foreground hover:text-primary/80"
             )}
             end={tab.exact}
           >
