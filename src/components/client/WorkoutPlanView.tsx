@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { WorkoutPlan, Workout, weekDays } from '@/types/workout';
@@ -21,14 +20,13 @@ export const WorkoutPlanView = ({ onSelectWorkout }: WorkoutPlanViewProps) => {
       try {
         setLoading(true);
         
-        // Get the current user's assigned plan
         const { data: assignments, error: assignmentsError } = await supabase
           .from('workout_assignments')
           .select(`
             *,
             plan:workout_plans(*)
           `)
-          .is('end_date', null) // Only active assignments
+          .is('end_date', null)
           .order('start_date', { ascending: false })
           .limit(1);
           
@@ -38,7 +36,6 @@ export const WorkoutPlanView = ({ onSelectWorkout }: WorkoutPlanViewProps) => {
           const plan = assignments[0].plan as WorkoutPlan;
           setAssignedPlan(plan);
           
-          // Fetch workouts for this plan
           const { data: workoutsData, error: workoutsError } = await supabase
             .from('workouts')
             .select('*')
@@ -64,24 +61,21 @@ export const WorkoutPlanView = ({ onSelectWorkout }: WorkoutPlanViewProps) => {
   }, []);
 
   const getCurrentDayWorkout = () => {
-    const today = new Date().getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const today = new Date().getDay();
     return workouts.find(workout => workout.day_of_week === today);
   };
 
   const getNextWorkout = () => {
     const today = new Date().getDay();
     
-    // First try to find the next workout scheduled for a future day this week
     for (let i = 1; i <= 7; i++) {
       const nextDay = (today + i) % 7;
       const workout = workouts.find(w => w.day_of_week === nextDay);
       if (workout) return { workout, daysUntil: i };
     }
     
-    // If no future workouts this week, return the first workout of next week
     if (workouts.length > 0) {
       const sortedWorkouts = [...workouts].sort((a, b) => {
-        // Handle null day_of_week values
         const dayA = a.day_of_week === null ? 7 : a.day_of_week;
         const dayB = b.day_of_week === null ? 7 : b.day_of_week;
         return dayA - dayB;
@@ -143,10 +137,12 @@ export const WorkoutPlanView = ({ onSelectWorkout }: WorkoutPlanViewProps) => {
                   <div className="flex justify-between items-center">
                     <div>
                       <h4 className="font-semibold">{todayWorkout.name}</h4>
-                      <div className="flex items-center text-xs text-muted-foreground mt-1">
-                        <Calendar className="h-3 w-3 mr-1" />
-                        <span>{weekDays[todayWorkout.day_of_week || 0]}</span>
-                      </div>
+                      {todayWorkout.day_of_week !== null && (
+                        <div className="flex items-center text-xs text-muted-foreground mt-1">
+                          <Calendar className="h-3 w-3 mr-1" />
+                          <span>{weekDays[todayWorkout.day_of_week]}</span>
+                        </div>
+                      )}
                     </div>
                     <Button size="sm">
                       Start Workout
@@ -167,17 +163,17 @@ export const WorkoutPlanView = ({ onSelectWorkout }: WorkoutPlanViewProps) => {
                   <div className="flex justify-between items-center">
                     <div>
                       <h4 className="font-semibold">{nextWorkoutInfo.workout.name}</h4>
-                      <div className="flex items-center text-xs text-muted-foreground mt-1">
-                        <Calendar className="h-3 w-3 mr-1" />
-                        <span>
-                          {nextWorkoutInfo.workout.day_of_week !== null
-                            ? `${weekDays[nextWorkoutInfo.workout.day_of_week]} `
-                            : ''}
-                          {nextWorkoutInfo.daysUntil !== null
-                            ? `(in ${nextWorkoutInfo.daysUntil} ${nextWorkoutInfo.daysUntil === 1 ? 'day' : 'days'})`
-                            : ''}
-                        </span>
-                      </div>
+                      {nextWorkoutInfo.workout.day_of_week !== null && (
+                        <div className="flex items-center text-xs text-muted-foreground mt-1">
+                          <Calendar className="h-3 w-3 mr-1" />
+                          <span>
+                            {weekDays[nextWorkoutInfo.workout.day_of_week]}
+                            {nextWorkoutInfo.daysUntil !== null
+                              ? ` (in ${nextWorkoutInfo.daysUntil} ${nextWorkoutInfo.daysUntil === 1 ? 'day' : 'days'})`
+                              : ''}
+                          </span>
+                        </div>
+                      )}
                     </div>
                     <Button 
                       variant="outline" 

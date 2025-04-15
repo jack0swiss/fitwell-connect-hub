@@ -70,7 +70,7 @@ export const WorkoutList = ({
                 <div className="flex justify-between items-center">
                   <div>
                     <h4 className="font-medium">{workout.name}</h4>
-                    {workout.day_of_week !== null && (
+                    {workout && workout.day_of_week !== null && (
                       <div className="flex items-center text-xs text-muted-foreground mt-1">
                         <Calendar className="h-3 w-3 mr-1" />
                         <span>{weekDays[workout.day_of_week]}</span>
