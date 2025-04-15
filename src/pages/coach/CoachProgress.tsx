@@ -42,7 +42,7 @@ const CoachProgress = () => {
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState<'week' | 'month' | 'quarter'>('month');
 
-  const { clients, isLoading } = useQuery({
+  const { data: clients = [], isLoading } = useQuery({
     queryKey: ['clientProgress'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
