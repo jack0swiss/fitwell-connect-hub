@@ -42,6 +42,7 @@ const WorkoutBuilder = ({ planId, onBack, initialWorkout }: WorkoutBuilderProps)
             onBack={onBack} 
             isSubmitting={isSubmitting} 
             isEditing={!!initialWorkout}
+            onSubmit={onSubmit}
           >
             <ExerciseList
               exercises={exercises}
