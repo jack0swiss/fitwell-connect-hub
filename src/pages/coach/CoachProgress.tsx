@@ -68,7 +68,7 @@ const CoachProgress = () => {
           end_date: new Date().toISOString()
         });
 
-        const adherencePercentage = workoutData?.data?.[0]?.adherence_percentage || 0;
+        const adherencePercentage = workoutData?.data?.[0]?.adherence_percentage ?? 0;
 
         const { data: nutritionData } = await supabase.rpc('get_nutrition_adherence', {
           user_id: clientId,
