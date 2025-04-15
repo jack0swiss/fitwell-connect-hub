@@ -76,17 +76,43 @@ export const useDashboardData = () => {
           ? bodyMetrics[0].weight_kg - bodyMetrics[1].weight_kg
           : 0;
 
+        // Get count of exercises for the workout
+        let exerciseCount = 0;
+        if (todayWorkout) {
+          const { data: exerciseData } = await supabase
+            .from('workout_exercises')
+            .select('*')
+            .eq('workout_id', todayWorkout.id);
+          
+          exerciseCount = exerciseData?.length || 0;
+        }
+
+        // Get calorie target from nutrition plan
+        let calorieTarget = 2000; // Default
+        const { data: nutritionPlan } = await supabase
+          .from('nutrition_plans')
+          .select('*')
+          .eq('client_id', user.id)
+          .is('end_date', null)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (nutritionPlan) {
+          calorieTarget = nutritionPlan.daily_calorie_target || 2000;
+        }
+
         return {
           name: user.user_metadata?.name || 'Client',
           motivationalQuote: "Keep pushing forward! Every step counts.",
           workout: {
             title: todayWorkout?.name || 'Rest Day',
             duration: '45 minutes',
-            exercises: todayWorkout?.workout_exercises?.length || 0,
+            exercises: exerciseCount,
           },
           nutrition: {
             caloriesConsumed: nutritionData?.[0]?.total_calories || 0,
-            caloriesGoal: assignments?.plan?.nutrition_plan?.daily_calorie_target || 2000,
+            caloriesGoal: calorieTarget,
             nextMeal: 'Based on your schedule',
           },
           progress: {
