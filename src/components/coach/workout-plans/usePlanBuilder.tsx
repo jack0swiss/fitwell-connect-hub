@@ -64,25 +64,46 @@ export function usePlanBuilder({ initialPlan, onBack }: UsePlanBuilderProps) {
   const onSubmit = async (values: PlanFormValues) => {
     try {
       setIsSubmitting(true);
+      console.log('Saving plan with values:', values);
+      
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+      
+      console.log('Current user:', user);
       
       let planId = initialPlan?.id;
       
       if (!planId) {
         // Create new plan
+        console.log('Creating new plan with coach_id:', user.id);
         const { data, error } = await supabase
           .from('workout_plans')
           .insert({
             name: values.name,
             description: values.description || null,
-            coach_id: (await supabase.auth.getUser()).data.user?.id,
+            coach_id: user.id,
           })
           .select()
           .single();
           
-        if (error) throw error;
+        if (error) {
+          console.error('Error creating plan:', error);
+          throw error;
+        }
+        
+        if (!data) {
+          throw new Error('No data returned from insert operation');
+        }
+        
+        console.log('Plan created successfully:', data);
         planId = data.id;
       } else {
         // Update existing plan
+        console.log('Updating plan with ID:', planId);
         const { error } = await supabase
           .from('workout_plans')
           .update({
@@ -92,7 +113,12 @@ export function usePlanBuilder({ initialPlan, onBack }: UsePlanBuilderProps) {
           })
           .eq('id', planId);
           
-        if (error) throw error;
+        if (error) {
+          console.error('Error updating plan:', error);
+          throw error;
+        }
+        
+        console.log('Plan updated successfully');
       }
       
       toast({
