@@ -61,7 +61,7 @@ const ClientDashboard = () => {
     <div className="min-h-screen bg-fitwell-dark text-white pb-20">
       <DashboardHeader unreadMessages={unreadMessages} />
       
-      <main className="p-4 max-w-2xl mx-auto">
+      <main className="p-4 max-w-2xl mx-auto mt-16">
         {dashboardData && (
           <DailyOverview
             userName={dashboardData.name}

@@ -1,7 +1,8 @@
 
-import { Bell, Settings, MessageCircle } from 'lucide-react';
+import { Bell, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { UserSettingsDialog } from '@/components/client/UserSettingsDialog';
 import { useNavigate } from 'react-router-dom';
 
 interface DashboardHeaderProps {
@@ -12,12 +13,10 @@ export const DashboardHeader = ({ unreadMessages }: DashboardHeaderProps) => {
   const navigate = useNavigate();
 
   return (
-    <header className="sticky top-0 z-10 bg-card/80 backdrop-blur-sm border-b border-border/50 p-4 flex justify-between items-center">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-card/80 backdrop-blur-sm border-b border-border/50 p-4 flex justify-between items-center">
       <h1 className="text-xl font-bold">FitWell Connect</h1>
       <div className="flex space-x-2">
-        <Button variant="outline" size="icon">
-          <Settings className="h-5 w-5" />
-        </Button>
+        <UserSettingsDialog />
         <Button variant="outline" size="icon" className="relative" onClick={() => navigate('/client/chat')}>
           <MessageCircle className="h-5 w-5" />
           {unreadMessages > 0 && (
