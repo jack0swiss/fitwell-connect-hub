@@ -1,4 +1,5 @@
 
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dumbbell, Utensils, TrendingUp } from 'lucide-react';
@@ -31,6 +32,16 @@ const DailyOverview = ({
   nutrition,
   progress,
 }: DailyOverviewProps) => {
+  const navigate = useNavigate();
+
+  const handleStartWorkout = () => {
+    navigate('/client/workouts');
+  };
+
+  const handleLogMeal = () => {
+    navigate('/client/nutrition');
+  };
+
   return (
     <div className="space-y-4">
       <div className="fitness-card">
@@ -56,7 +67,10 @@ const DailyOverview = ({
                 <span>{workout.exercises} exercises</span>
               </div>
             </div>
-            <Button className="w-full bg-fitwell-purple hover:bg-fitwell-purple/90">
+            <Button 
+              className="w-full bg-fitwell-purple hover:bg-fitwell-purple/90"
+              onClick={handleStartWorkout}
+            >
               Start Workout
             </Button>
           </CardContent>
@@ -96,7 +110,10 @@ const DailyOverview = ({
                 Next suggested meal: {nutrition.nextMeal}
               </p>
             </div>
-            <Button className="w-full bg-fitwell-blue hover:bg-fitwell-blue/90">
+            <Button 
+              className="w-full bg-fitwell-blue hover:bg-fitwell-blue/90"
+              onClick={handleLogMeal}
+            >
               Log Meal
             </Button>
           </CardContent>
