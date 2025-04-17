@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -10,6 +9,9 @@ import { toast } from '@/components/ui/use-toast';
 const workoutPlanSchema = z.object({
   name: z.string().min(1, 'Plan name is required'),
   description: z.string().optional(),
+  selectedWorkout: z.any().optional(),
+  isCreatingWorkout: z.boolean().default(false),
+  workouts: z.any().optional(),
 });
 
 export type PlanFormValues = z.infer<typeof workoutPlanSchema>;
@@ -30,6 +32,9 @@ export function usePlanBuilder({ initialPlan, onBack }: UsePlanBuilderProps) {
     defaultValues: {
       name: initialPlan?.name || '',
       description: initialPlan?.description || '',
+      selectedWorkout: null,
+      isCreatingWorkout: false,
+      workouts: [],
     },
   });
 
@@ -46,6 +51,7 @@ export function usePlanBuilder({ initialPlan, onBack }: UsePlanBuilderProps) {
           
         if (error) throw error;
         setWorkouts(data || []);
+        form.setValue('workouts', data || []);
       } catch (error) {
         console.error('Error loading workouts:', error);
         toast({
@@ -59,7 +65,24 @@ export function usePlanBuilder({ initialPlan, onBack }: UsePlanBuilderProps) {
     if (initialPlan) {
       fetchWorkouts();
     }
-  }, [initialPlan]);
+  }, [initialPlan, form]);
+
+  useEffect(() => {
+    // Keep the state variables in sync with the form values
+    const subscription = form.watch((value, { name }) => {
+      if (name === 'selectedWorkout') {
+        setSelectedWorkout(value.selectedWorkout);
+      }
+      if (name === 'isCreatingWorkout') {
+        setIsCreatingWorkout(value.isCreatingWorkout);
+      }
+      if (name === 'workouts') {
+        setWorkouts(value.workouts || []);
+      }
+    });
+    
+    return () => subscription.unsubscribe();
+  }, [form]);
 
   // This is the internal form submission handler
   const handleFormSubmit = async (values: PlanFormValues) => {
@@ -155,12 +178,15 @@ export function usePlanBuilder({ initialPlan, onBack }: UsePlanBuilderProps) {
             console.error('Error refreshing workouts:', error);
           } else {
             setWorkouts(data || []);
+            form.setValue('workouts', data || []);
           }
         });
     }
     
     setSelectedWorkout(null);
+    form.setValue('selectedWorkout', null);
     setIsCreatingWorkout(false);
+    form.setValue('isCreatingWorkout', false);
   };
 
   return {
