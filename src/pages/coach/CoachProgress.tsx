@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button';
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ClientNutritionData, NutritionTotals, DailyCalorie } from '@/types/nutrition';
 
 const CoachProgress = () => {
   const [selectedClient, setSelectedClient] = useState<string | null>(null);
@@ -95,7 +96,7 @@ const CoachProgress = () => {
   const { data: nutritionData, isLoading: nutritionLoading } = useQuery({
     queryKey: ['nutritionData', selectedClient],
     queryFn: async () => {
-      if (!selectedClient) return [];
+      if (!selectedClient) return null;
       
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - 14); // Last 14 days
@@ -124,7 +125,7 @@ const CoachProgress = () => {
       }
 
       // Process logs per day for chart
-      const dailyCalories: Record<string, any> = {};
+      const dailyCalories: Record<string, DailyCalorie> = {};
       logs?.forEach(log => {
         const date = log.date;
         if (!dailyCalories[date]) {
@@ -133,8 +134,9 @@ const CoachProgress = () => {
         dailyCalories[date].calories += log.calories;
       });
 
-      return {
-        totals: data?.[0] || { 
+      // Create a properly typed return object
+      const result: ClientNutritionData = {
+        totals: data?.[0] as NutritionTotals || { 
           total_calories: 0, 
           total_protein: 0, 
           total_carbs: 0, 
@@ -143,6 +145,8 @@ const CoachProgress = () => {
         },
         dailyCalories: Object.values(dailyCalories)
       };
+
+      return result;
     },
     enabled: !!selectedClient
   });
@@ -179,6 +183,15 @@ const CoachProgress = () => {
     client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     client.email?.toLowerCase().includes(searchQuery.toLowerCase())
   ) || [];
+
+  // Default nutrition totals when data is not available
+  const defaultTotals: NutritionTotals = {
+    total_calories: 0,
+    total_protein: 0,
+    total_carbs: 0,
+    total_fat: 0,
+    total_water_ml: 0
+  };
 
   return (
     <div className="min-h-screen bg-fitwell-dark text-white pb-20">

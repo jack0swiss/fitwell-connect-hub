@@ -1,4 +1,3 @@
-
 export type NutritionPlan = {
   id: string;
   client_id: string | null;
@@ -82,3 +81,21 @@ export type WorkoutAdherence = {
 };
 
 export const mealTypes = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
+
+export type NutritionTotals = {
+  total_calories: number;
+  total_protein: number;
+  total_carbs: number;
+  total_fat: number;
+  total_water_ml: number;
+};
+
+export type DailyCalorie = {
+  date: string;
+  calories: number;
+};
+
+export type ClientNutritionData = {
+  totals: NutritionTotals;
+  dailyCalories: DailyCalorie[];
+};
