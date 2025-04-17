@@ -43,11 +43,12 @@ export const WorkoutPlanAssignment = ({ plan, onBack }: WorkoutPlanAssignmentPro
         if (profilesError) throw profilesError;
         
         // Convert profiles to client format
+        // Note: We're no longer trying to access avatar_url as it doesn't exist
         const clientsData: Client[] = profilesData.map(profile => ({
           id: profile.id,
           name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim(),
           email: profile.email || '',
-          avatarUrl: profile.avatar_url,
+          // We're not getting avatarUrl from profile since it doesn't exist
         }));
         
         // Fetch existing assignments for this plan
