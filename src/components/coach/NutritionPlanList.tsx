@@ -26,28 +26,41 @@ const NutritionPlanList = ({ searchQuery, onClientSelect }: NutritionPlanListPro
   const { data: clients, isLoading } = useQuery({
     queryKey: ['clientsWithNutritionPlans'],
     queryFn: async () => {
+      // Get current authenticated user
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
+      
+      console.log('Fetching clients and their nutrition plans');
 
-      // Get profiles directly from the profiles table
+      // Get all profiles first
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('*');
 
-      if (profilesError) throw profilesError;
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+        throw profilesError;
+      }
+      
+      console.log('Fetched profiles:', profiles?.length || 0);
       
       // If no profiles are found, return empty array
       if (!profiles || profiles.length === 0) return [];
 
-      // Get nutrition plans for these clients
+      // Get nutrition plans
       const { data: plans, error: plansError } = await supabase
         .from('nutrition_plans')
         .select('*');
 
-      if (plansError) throw plansError;
+      if (plansError) {
+        console.error('Error fetching plans:', plansError);
+        throw plansError;
+      }
+      
+      console.log('Fetched plans:', plans?.length || 0);
 
       // Map profiles to clients with their plans
-      return profiles.map(profile => {
+      const clientsWithPlans = profiles.map(profile => {
         const clientPlan = plans?.find(p => p.client_id === profile.id);
         return {
           id: profile.id,
@@ -56,6 +69,10 @@ const NutritionPlanList = ({ searchQuery, onClientSelect }: NutritionPlanListPro
           plan: clientPlan
         };
       }) as ClientWithPlan[];
+      
+      console.log('Mapped clients with plans:', clientsWithPlans.length);
+      
+      return clientsWithPlans;
     }
   });
   
@@ -71,6 +88,8 @@ const NutritionPlanList = ({ searchQuery, onClientSelect }: NutritionPlanListPro
     client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     client.email.toLowerCase().includes(searchQuery.toLowerCase())
   ) || [];
+  
+  console.log('Filtered clients:', filteredClients.length);
 
   if (isLoading) {
     return (

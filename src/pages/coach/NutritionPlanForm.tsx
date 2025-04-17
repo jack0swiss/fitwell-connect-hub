@@ -39,6 +39,12 @@ const NutritionPlanForm = () => {
       setLoading(true);
       
       try {
+        // First, get the current coach ID
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('Not authenticated');
+        
+        const coachId = user.id;
+        
         if (!isNewPlan) {
           // Fetch existing plan
           const { data: plan, error: planError } = await supabase
@@ -60,32 +66,44 @@ const NutritionPlanForm = () => {
             // Set client info
             const clientId = plan.client_id;
             if (clientId) {
-              // In a real app, fetch client name from profiles table
-              // For mock, use predefined names
-              const mockNames: { [key: string]: string } = {
-                '1': 'Sarah Johnson',
-                '2': 'Michael Chen',
-                '3': 'Emma Rodriguez'
-              };
+              // Fetch client info from profiles
+              const { data: profileData, error: profileError } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', clientId)
+                .single();
+                
+              if (profileError && profileError.code !== 'PGRST116') {
+                throw profileError;
+              }
               
-              setClient({
-                id: clientId,
-                name: mockNames[clientId] || `Client ${clientId}`
-              });
+              if (profileData) {
+                setClient({
+                  id: clientId,
+                  name: `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim() || `Client ${clientId.substring(0, 6)}`
+                });
+              }
             }
           }
         } else if (queryClientId) {
           // New plan with specified client
-          const mockNames: { [key: string]: string } = {
-            '1': 'Sarah Johnson',
-            '2': 'Michael Chen',
-            '3': 'Emma Rodriguez'
-          };
+          // Fetch client info from profiles
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', queryClientId)
+            .single();
+            
+          if (profileError && profileError.code !== 'PGRST116') {
+            throw profileError;
+          }
           
-          setClient({
-            id: queryClientId,
-            name: mockNames[queryClientId] || `Client ${queryClientId}`
-          });
+          if (profileData) {
+            setClient({
+              id: queryClientId,
+              name: `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim() || `Client ${queryClientId.substring(0, 6)}`
+            });
+          }
         }
       } catch (error) {
         console.error('Error fetching plan data:', error);
@@ -145,9 +163,17 @@ const NutritionPlanForm = () => {
     
     try {
       setSaving(true);
+      console.log('Attempting to save nutrition plan for client:', client.id);
+      
+      // Get the current coach ID
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+      
+      const coachId = user.id;
       
       const planData = {
         client_id: client.id,
+        coach_id: coachId, // Add coach_id to link the plan to the coach
         daily_calorie_target: calorieTarget,
         macro_carbs_pct: carbsPct,
         macro_protein_pct: proteinPct,
@@ -158,11 +184,18 @@ const NutritionPlanForm = () => {
       
       if (isNewPlan) {
         // Create new plan
-        const { error } = await supabase
+        console.log('Creating new plan with data:', planData);
+        const { data, error } = await supabase
           .from('nutrition_plans')
-          .insert(planData);
+          .insert(planData)
+          .select();
           
-        if (error) throw error;
+        if (error) {
+          console.error('Supabase error:', error);
+          throw error;
+        }
+        
+        console.log('Plan created successfully:', data);
         
         toast({
           title: 'Plan Created',
@@ -170,12 +203,19 @@ const NutritionPlanForm = () => {
         });
       } else {
         // Update existing plan
-        const { error } = await supabase
+        console.log('Updating plan with data:', planData);
+        const { data, error } = await supabase
           .from('nutrition_plans')
           .update(planData)
-          .eq('id', planId);
+          .eq('id', planId)
+          .select();
           
-        if (error) throw error;
+        if (error) {
+          console.error('Supabase error:', error);
+          throw error;
+        }
+        
+        console.log('Plan updated successfully:', data);
         
         toast({
           title: 'Plan Updated',

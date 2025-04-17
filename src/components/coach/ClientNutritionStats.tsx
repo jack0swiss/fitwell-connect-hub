@@ -29,20 +29,32 @@ const ClientNutritionStats = ({ clientId, onBack }: ClientNutritionStatsProps) =
       setLoading(true);
       
       try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('Not authenticated');
+        
+        console.log('Fetching client data for clientId:', clientId);
+        
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', clientId)
           .single();
           
-        if (profileError && profileError.code !== 'PGRST116') {
-          throw profileError;
+        if (profileError) {
+          console.error('Error fetching profile:', profileError);
+          if (profileError.code !== 'PGRST116') {
+            throw profileError;
+          }
         }
         
-        setClient({
-          id: clientId,
-          name: profileData ? `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim() : `Client ${clientId.substring(0, 6)}`
-        });
+        if (profileData) {
+          setClient({
+            id: clientId,
+            name: `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim() || `Client ${clientId.substring(0, 6)}`
+          });
+        } else {
+          console.log('No profile data found for client ID:', clientId);
+        }
         
         const { data: planData, error: planError } = await supabase
           .from('nutrition_plans')
@@ -50,7 +62,12 @@ const ClientNutritionStats = ({ clientId, onBack }: ClientNutritionStatsProps) =
           .eq('client_id', clientId)
           .maybeSingle();
           
-        if (planError) throw planError;
+        if (planError) {
+          console.error('Error fetching plan:', planError);
+          throw planError;
+        }
+        
+        console.log('Plan data:', planData);
         setPlan(planData);
         
         const today = new Date();
