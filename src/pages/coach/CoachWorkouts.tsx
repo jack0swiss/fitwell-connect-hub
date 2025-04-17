@@ -22,6 +22,11 @@ const CoachWorkouts = () => {
         
         if (!session) {
           console.log("No session found in CoachWorkouts");
+          toast({
+            title: 'Authentication Required',
+            description: 'Please log in to access this page',
+            variant: 'destructive',
+          });
           setIsLoading(false);
           return;
         }
@@ -29,6 +34,17 @@ const CoachWorkouts = () => {
         // Get user data
         const { data: { user } } = await supabase.auth.getUser();
         console.log("User data in CoachWorkouts:", user);
+        
+        // Also log any profiles data to help debug
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('*');
+          
+        if (profilesError) {
+          console.error('Error fetching profiles:', profilesError);
+        } else {
+          console.log('Available profiles:', profiles);
+        }
         
         setIsLoading(false);
       } catch (error) {

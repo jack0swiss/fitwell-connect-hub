@@ -8,6 +8,7 @@ import { ArrowLeft, Calendar, Check, User, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from '@/components/ui/use-toast';
+import LoadingSpinner from '../coach/nutrition/LoadingSpinner';
 
 interface WorkoutPlanAssignmentProps {
   plan: WorkoutPlan;
@@ -34,13 +35,20 @@ export const WorkoutPlanAssignment = ({ plan, onBack }: WorkoutPlanAssignmentPro
       try {
         setLoading(true);
         
-        // In a real app, you would fetch actual clients
-        // This is a mock implementation
-        const mockClients: Client[] = [
-          { id: '1', name: 'Sarah Johnson', email: 'sarah@example.com' },
-          { id: '2', name: 'Michael Chen', email: 'michael@example.com' },
-          { id: '3', name: 'Emma Rodriguez', email: 'emma@example.com' },
-        ];
+        // Fetch actual clients from the profiles table
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('*');
+          
+        if (profilesError) throw profilesError;
+        
+        // Convert profiles to client format
+        const clientsData: Client[] = profilesData.map(profile => ({
+          id: profile.id,
+          name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim(),
+          email: profile.email || '',
+          avatarUrl: profile.avatar_url,
+        }));
         
         // Fetch existing assignments for this plan
         const { data: assignmentsData, error: assignmentsError } = await supabase
@@ -51,7 +59,7 @@ export const WorkoutPlanAssignment = ({ plan, onBack }: WorkoutPlanAssignmentPro
         if (assignmentsError) throw assignmentsError;
         
         // Mark clients as assigned if they have an assignment for this plan
-        const clientsWithAssignments = mockClients.map(client => {
+        const clientsWithAssignments = clientsData.map(client => {
           const assignment = assignmentsData?.find(a => a.client_id === client.id);
           return {
             ...client,
@@ -63,6 +71,7 @@ export const WorkoutPlanAssignment = ({ plan, onBack }: WorkoutPlanAssignmentPro
         });
         
         setClients(clientsWithAssignments);
+        console.log('Fetched clients:', clientsWithAssignments);
       } catch (error) {
         console.error('Error fetching clients and assignments:', error);
         toast({
@@ -103,17 +112,22 @@ export const WorkoutPlanAssignment = ({ plan, onBack }: WorkoutPlanAssignmentPro
         }
       } else {
         // Create new assignment starting today
+        const today = new Date().toISOString().split('T')[0]; // Format as YYYY-MM-DD
+        
         const { data, error } = await supabase
           .from('workout_assignments')
           .insert({
             plan_id: plan.id,
             client_id: client.id,
-            start_date: new Date().toISOString()
+            start_date: today
           })
           .select()
           .single();
           
-        if (error) throw error;
+        if (error) {
+          console.error('Assignment error details:', error);
+          throw error;
+        }
         
         setClients(clients.map(c => 
           c.id === client.id 
@@ -179,9 +193,7 @@ export const WorkoutPlanAssignment = ({ plan, onBack }: WorkoutPlanAssignmentPro
           <h3 className="text-md font-medium mb-3">Clients</h3>
           
           {loading ? (
-            <div className="flex justify-center py-4">
-              <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-fitwell-purple"></div>
-            </div>
+            <LoadingSpinner />
           ) : clients.length === 0 ? (
             <div className="text-center py-4 text-muted-foreground">
               No clients available to assign this plan to.
@@ -233,4 +245,3 @@ export const WorkoutPlanAssignment = ({ plan, onBack }: WorkoutPlanAssignmentPro
     </div>
   );
 };
-
