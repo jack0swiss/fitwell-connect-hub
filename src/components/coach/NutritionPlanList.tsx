@@ -29,38 +29,30 @@ const NutritionPlanList = ({ searchQuery, onClientSelect }: NutritionPlanListPro
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      // Get all clients assigned to this coach
-      // Since we don't have a "profiles" table, we'll use auth.users data and customize the approach
-      const { data: assignments, error: assignmentsError } = await supabase
-        .from('workout_assignments')
-        .select('client_id')
-        .eq('end_date', null);
+      // Get profiles directly from the profiles table
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('*');
 
-      if (assignmentsError) throw assignmentsError;
-
-      // Extract unique client IDs
-      const clientIds = [...new Set(assignments?.map(a => a.client_id))].filter(Boolean);
+      if (profilesError) throw profilesError;
       
-      // If no clients are assigned, return empty array
-      if (!clientIds.length) return [];
+      // If no profiles are found, return empty array
+      if (!profiles || profiles.length === 0) return [];
 
       // Get nutrition plans for these clients
       const { data: plans, error: plansError } = await supabase
         .from('nutrition_plans')
-        .select('*')
-        .in('client_id', clientIds);
+        .select('*');
 
       if (plansError) throw plansError;
 
-      // Since we can't directly query user profiles, we'll build our client list
-      // from the workout assignments and supplement with minimal data
-      return clientIds.map(clientId => {
-        const clientPlan = plans?.find(p => p.client_id === clientId);
-        // Create basic client info from available data
+      // Map profiles to clients with their plans
+      return profiles.map(profile => {
+        const clientPlan = plans?.find(p => p.client_id === profile.id);
         return {
-          id: clientId as string,
-          name: `Client ${clientId?.substring(0, 6)}`, // Use partial ID as a placeholder
-          email: "client@example.com", // Placeholder email
+          id: profile.id,
+          name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || `Client ${profile.id.substring(0, 6)}`,
+          email: profile.email || "No email",
           plan: clientPlan
         };
       }) as ClientWithPlan[];

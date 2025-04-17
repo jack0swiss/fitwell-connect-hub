@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Calendar, Edit } from 'lucide-react';
@@ -30,20 +29,21 @@ const ClientNutritionStats = ({ clientId, onBack }: ClientNutritionStatsProps) =
       setLoading(true);
       
       try {
-        // In a real implementation, this would fetch from a profiles table
-        // For now, use mock client names based on ID
-        const mockNames: { [key: string]: string } = {
-          '1': 'Sarah Johnson',
-          '2': 'Michael Chen',
-          '3': 'Emma Rodriguez'
-        };
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', clientId)
+          .single();
+          
+        if (profileError && profileError.code !== 'PGRST116') {
+          throw profileError;
+        }
         
         setClient({
           id: clientId,
-          name: mockNames[clientId] || `Client ${clientId}`
+          name: profileData ? `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim() : `Client ${clientId.substring(0, 6)}`
         });
         
-        // Fetch client's nutrition plan
         const { data: planData, error: planError } = await supabase
           .from('nutrition_plans')
           .select('*')
@@ -53,7 +53,6 @@ const ClientNutritionStats = ({ clientId, onBack }: ClientNutritionStatsProps) =
         if (planError) throw planError;
         setPlan(planData);
         
-        // Fetch the last 14 days of nutrition logs
         const today = new Date();
         const twoWeeksAgo = subDays(today, 14);
         
@@ -69,10 +68,8 @@ const ClientNutritionStats = ({ clientId, onBack }: ClientNutritionStatsProps) =
         if (logsError) throw logsError;
         setRecentLogs(logsData || []);
         
-        // Generate weekly chart data
         const weeklyStats: { [key: string]: any } = {};
         
-        // Create entries for the last 7 days
         for (let i = 0; i < 7; i++) {
           const date = subDays(today, i);
           const dateStr = format(date, 'yyyy-MM-dd');
@@ -87,7 +84,6 @@ const ClientNutritionStats = ({ clientId, onBack }: ClientNutritionStatsProps) =
           };
         }
         
-        // Sum the actual nutrition logs by date
         if (logsData) {
           for (const log of logsData) {
             const dateStr = log.date;
@@ -101,7 +97,6 @@ const ClientNutritionStats = ({ clientId, onBack }: ClientNutritionStatsProps) =
           }
         }
         
-        // Fetch water logs for the same period
         const { data: waterData, error: waterError } = await supabase
           .from('water_logs')
           .select('*')
@@ -110,7 +105,6 @@ const ClientNutritionStats = ({ clientId, onBack }: ClientNutritionStatsProps) =
           
         if (waterError) throw waterError;
         
-        // Sum water logs by date
         if (waterData) {
           for (const log of waterData) {
             const dateStr = log.date;
@@ -120,7 +114,6 @@ const ClientNutritionStats = ({ clientId, onBack }: ClientNutritionStatsProps) =
           }
         }
         
-        // Convert to array and sort by date ascending
         const chartData = Object.values(weeklyStats)
           .sort((a, b) => a.date.localeCompare(b.date));
         
