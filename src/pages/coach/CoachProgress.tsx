@@ -46,7 +46,7 @@ const CoachProgress = () => {
       return profiles.map(profile => ({
         id: profile.id,
         name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || profile.email || `User ${profile.id.slice(0, 6)}`,
-        email: profile.email
+        email: profile.email || ''
       }));
     }
   });
@@ -180,8 +180,8 @@ const CoachProgress = () => {
 
   // Filter clients based on search query
   const filteredClients = clients?.filter(client => 
-    client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    client.email?.toLowerCase().includes(searchQuery.toLowerCase())
+    (client.name?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+    (client.email?.toLowerCase() || '').includes(searchQuery.toLowerCase())
   ) || [];
 
   // Default nutrition totals when data is not available
@@ -297,19 +297,19 @@ const CoachProgress = () => {
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                           <div className="bg-muted p-3 rounded-lg">
                             <div className="text-sm text-muted-foreground">Calories</div>
-                            <div className="text-lg font-semibold">{nutritionData.totals.total_calories || 0}</div>
+                            <div className="text-lg font-semibold">{nutritionData.totals?.total_calories || 0}</div>
                           </div>
                           <div className="bg-muted p-3 rounded-lg">
                             <div className="text-sm text-muted-foreground">Protein</div>
-                            <div className="text-lg font-semibold">{nutritionData.totals.total_protein || 0}g</div>
+                            <div className="text-lg font-semibold">{nutritionData.totals?.total_protein || 0}g</div>
                           </div>
                           <div className="bg-muted p-3 rounded-lg">
                             <div className="text-sm text-muted-foreground">Carbs</div>
-                            <div className="text-lg font-semibold">{nutritionData.totals.total_carbs || 0}g</div>
+                            <div className="text-lg font-semibold">{nutritionData.totals?.total_carbs || 0}g</div>
                           </div>
                           <div className="bg-muted p-3 rounded-lg">
                             <div className="text-sm text-muted-foreground">Fat</div>
-                            <div className="text-lg font-semibold">{nutritionData.totals.total_fat || 0}g</div>
+                            <div className="text-lg font-semibold">{nutritionData.totals?.total_fat || 0}g</div>
                           </div>
                         </div>
                         

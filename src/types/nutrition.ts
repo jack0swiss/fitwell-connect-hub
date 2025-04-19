@@ -1,3 +1,4 @@
+
 export type NutritionPlan = {
   id: string;
   client_id: string | null;
