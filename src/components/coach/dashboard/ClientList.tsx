@@ -72,7 +72,7 @@ export function ClientList({ clients, onClientDeleted }: ClientListProps) {
               <Button variant="ghost" size="icon" onClick={() => handleViewClientDetail(client.id)}>
                 <TrendingUp className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="icon" onClick={() => navigate(`/coach/clients/${client.id}`)}>
+              <Button variant="ghost" size="icon" onClick={() => navigate(`/coach/client/${client.id}`)}>
                 <Pencil className="h-4 w-4" />
               </Button>
               <AlertDialog>
