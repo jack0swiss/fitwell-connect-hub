@@ -46,10 +46,15 @@ export const useClientDashboardMetrics = (clientId: string) => {
         const goalsTotal = goals ? goals.length : 0;
         const goalsAchieved = goals ? goals.filter(goal => goal.is_achieved).length : 0;
         
+        // Use a safer approach to handle potentially null workoutData and nutritionData
+        const adherencePercentage = workoutData && workoutData[0] ? workoutData[0].adherence_percentage ?? 0 : 0;
+        const completedWorkouts = workoutData && workoutData[0] ? workoutData[0].completed_workouts ?? 0 : 0;
+        const plannedWorkouts = workoutData && workoutData[0] ? workoutData[0].planned_workouts ?? 0 : 0;
+        
         return {
-          workoutCompletionRate: workoutData?.[0]?.adherence_percentage ?? 0,
-          workoutsCompleted: workoutData?.[0]?.completed_workouts ?? 0,
-          workoutsTotal: workoutData?.[0]?.planned_workouts ?? 0,
+          workoutCompletionRate: adherencePercentage,
+          workoutsCompleted: completedWorkouts,
+          workoutsTotal: plannedWorkouts,
           calorieAdherence: nutritionData?.[0]?.calorie_adherence_percentage ?? 0,
           caloriesConsumed: Math.round(nutritionData?.[0]?.avg_daily_calories ?? 0),
           caloriesTarget: nutritionData?.[0]?.target_calories ?? 0,
