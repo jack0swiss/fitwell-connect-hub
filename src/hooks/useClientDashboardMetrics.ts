@@ -18,18 +18,21 @@ export const useClientDashboardMetrics = (clientId: string) => {
     queryKey: ['clientMetrics', clientId],
     queryFn: async (): Promise<ClientMetrics> => {
       try {
-        // Get workout adherence 
+        // Get workout adherence - convert Date objects to ISO strings
+        const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000); // 30 days ago
+        const endDate = new Date();
+        
         const { data: workoutData } = await supabase.rpc('get_workout_adherence', {
           user_id: clientId,
-          start_date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
-          end_date: new Date()
+          start_date: startDate.toISOString().split('T')[0], // Format as YYYY-MM-DD
+          end_date: endDate.toISOString().split('T')[0]
         });
         
         // Get nutrition adherence
         const { data: nutritionData } = await supabase.rpc('get_nutrition_adherence', {
           user_id: clientId,
-          start_date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
-          end_date: new Date()
+          start_date: startDate.toISOString().split('T')[0],
+          end_date: endDate.toISOString().split('T')[0]
         });
         
         // Get goals
@@ -44,12 +47,12 @@ export const useClientDashboardMetrics = (clientId: string) => {
         const goalsAchieved = goals ? goals.filter(goal => goal.is_achieved).length : 0;
         
         return {
-          workoutCompletionRate: workoutData?.[0]?.adherence_percentage || 0,
-          workoutsCompleted: workoutData?.[0]?.completed_workouts || 0,
-          workoutsTotal: workoutData?.[0]?.planned_workouts || 0,
-          calorieAdherence: nutritionData?.[0]?.calorie_adherence_percentage || 0,
-          caloriesConsumed: Math.round(nutritionData?.[0]?.avg_daily_calories || 0),
-          caloriesTarget: nutritionData?.[0]?.target_calories || 0,
+          workoutCompletionRate: workoutData?.[0]?.adherence_percentage ?? 0,
+          workoutsCompleted: workoutData?.[0]?.completed_workouts ?? 0,
+          workoutsTotal: workoutData?.[0]?.planned_workouts ?? 0,
+          calorieAdherence: nutritionData?.[0]?.calorie_adherence_percentage ?? 0,
+          caloriesConsumed: Math.round(nutritionData?.[0]?.avg_daily_calories ?? 0),
+          caloriesTarget: nutritionData?.[0]?.target_calories ?? 0,
           goalsAchieved,
           goalsTotal
         };
