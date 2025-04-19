@@ -34,7 +34,14 @@ const ClientDetail = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [showWorkoutBuilder, setShowWorkoutBuilder] = useState(false);
 
-  const form = useForm<ClientFormData>();
+  const form = useForm<ClientFormData>({
+    defaultValues: {
+      first_name: '',
+      last_name: '',
+      email: '',
+      phone: ''
+    }
+  });
 
   const { data: workoutData, isLoading: workoutLoading } = useClientWorkoutData(clientId || null);
   const { data: nutritionData, isLoading: nutritionLoading } = useClientNutritionData(clientId || null);
@@ -110,7 +117,7 @@ const ClientDetail = () => {
 
   if (showWorkoutBuilder) {
     return (
-      <CoachLayout>
+      <CoachLayout title={client ? `Create Workout for ${client.first_name || ''} ${client.last_name || ''}` : 'Create Workout'}>
         <WorkoutBuilder
           planId={null}
           onBack={() => setShowWorkoutBuilder(false)}
@@ -148,66 +155,68 @@ const ClientDetail = () => {
               </CardHeader>
               <CardContent>
                 {isEditing ? (
-                  <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="first_name"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>First Name</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="last_name"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Last Name</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Email</FormLabel>
-                            <FormControl>
-                              <Input {...field} type="email" />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="phone"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Phone</FormLabel>
-                            <FormControl>
-                              <Input {...field} type="tel" />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    <div className="flex justify-end space-x-2">
-                      <Button variant="outline" onClick={() => setIsEditing(false)}>
-                        Cancel
-                      </Button>
-                      <Button type="submit">
-                        Save Changes
-                      </Button>
-                    </div>
-                  </form>
+                  <Form {...form}>
+                    <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="first_name"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>First Name</FormLabel>
+                              <FormControl>
+                                <Input {...field} />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="last_name"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Last Name</FormLabel>
+                              <FormControl>
+                                <Input {...field} />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="email"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Email</FormLabel>
+                              <FormControl>
+                                <Input {...field} type="email" />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="phone"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Phone</FormLabel>
+                              <FormControl>
+                                <Input {...field} type="tel" />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      <div className="flex justify-end space-x-2">
+                        <Button variant="outline" onClick={() => setIsEditing(false)}>
+                          Cancel
+                        </Button>
+                        <Button type="submit">
+                          Save Changes
+                        </Button>
+                      </div>
+                    </form>
+                  </Form>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
