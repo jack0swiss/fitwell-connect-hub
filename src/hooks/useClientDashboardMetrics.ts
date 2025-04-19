@@ -13,6 +13,19 @@ interface ClientMetrics {
   goalsTotal: number;
 }
 
+// Define types for the database function responses
+interface WorkoutAdherenceData {
+  adherence_percentage: number;
+  completed_workouts: number;
+  planned_workouts: number;
+}
+
+interface NutritionAdherenceData {
+  avg_daily_calories: number;
+  target_calories: number;
+  calorie_adherence_percentage: number;
+}
+
 export const useClientDashboardMetrics = (clientId: string) => {
   return useQuery({
     queryKey: ['clientMetrics', clientId],
@@ -22,18 +35,22 @@ export const useClientDashboardMetrics = (clientId: string) => {
         const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000); // 30 days ago
         const endDate = new Date();
         
-        const { data: workoutData } = await supabase.rpc('get_workout_adherence', {
+        const { data: workoutData, error: workoutError } = await supabase.rpc('get_workout_adherence', {
           user_id: clientId,
           start_date: startDate.toISOString().split('T')[0], // Format as YYYY-MM-DD
           end_date: endDate.toISOString().split('T')[0]
         });
         
+        if (workoutError) throw workoutError;
+        
         // Get nutrition adherence
-        const { data: nutritionData } = await supabase.rpc('get_nutrition_adherence', {
+        const { data: nutritionData, error: nutritionError } = await supabase.rpc('get_nutrition_adherence', {
           user_id: clientId,
           start_date: startDate.toISOString().split('T')[0],
           end_date: endDate.toISOString().split('T')[0]
         });
+        
+        if (nutritionError) throw nutritionError;
         
         // Get goals
         const { data: goals, error: goalsError } = await supabase
@@ -46,18 +63,22 @@ export const useClientDashboardMetrics = (clientId: string) => {
         const goalsTotal = goals ? goals.length : 0;
         const goalsAchieved = goals ? goals.filter(goal => goal.is_achieved).length : 0;
         
-        // Use a safer approach to handle potentially null workoutData and nutritionData
-        const adherencePercentage = workoutData && workoutData[0] ? workoutData[0].adherence_percentage ?? 0 : 0;
-        const completedWorkouts = workoutData && workoutData[0] ? workoutData[0].completed_workouts ?? 0 : 0;
-        const plannedWorkouts = workoutData && workoutData[0] ? workoutData[0].planned_workouts ?? 0 : 0;
+        // Type assertion to help TypeScript understand the structure
+        const typedWorkoutData = workoutData as WorkoutAdherenceData[];
+        const typedNutritionData = nutritionData as NutritionAdherenceData[];
+        
+        // Use a safer approach to handle potentially null or undefined data
+        const adherencePercentage = typedWorkoutData && typedWorkoutData[0] ? typedWorkoutData[0].adherence_percentage ?? 0 : 0;
+        const completedWorkouts = typedWorkoutData && typedWorkoutData[0] ? typedWorkoutData[0].completed_workouts ?? 0 : 0;
+        const plannedWorkouts = typedWorkoutData && typedWorkoutData[0] ? typedWorkoutData[0].planned_workouts ?? 0 : 0;
         
         return {
           workoutCompletionRate: adherencePercentage,
           workoutsCompleted: completedWorkouts,
           workoutsTotal: plannedWorkouts,
-          calorieAdherence: nutritionData?.[0]?.calorie_adherence_percentage ?? 0,
-          caloriesConsumed: Math.round(nutritionData?.[0]?.avg_daily_calories ?? 0),
-          caloriesTarget: nutritionData?.[0]?.target_calories ?? 0,
+          calorieAdherence: typedNutritionData?.[0]?.calorie_adherence_percentage ?? 0,
+          caloriesConsumed: Math.round(typedNutritionData?.[0]?.avg_daily_calories ?? 0),
+          caloriesTarget: typedNutritionData?.[0]?.target_calories ?? 0,
           goalsAchieved,
           goalsTotal
         };
