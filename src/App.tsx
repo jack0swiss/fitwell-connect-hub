@@ -19,6 +19,7 @@ import CoachNutrition from "./pages/coach/CoachNutrition";
 import CoachProgress from "./pages/coach/CoachProgress";
 import CoachChat from "./pages/coach/CoachChat";
 import NutritionPlanForm from "./pages/coach/NutritionPlanForm";
+import ClientDetail from "./pages/coach/ClientDetail";
 
 // Client pages
 import ClientDashboard from "./pages/client/ClientDashboard";
@@ -151,6 +152,11 @@ const App = () => {
             <Route path="/coach" element={
               <ProtectedRoute allowedRole="coach">
                 <CoachDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/coach/client/:clientId" element={
+              <ProtectedRoute allowedRole="coach">
+                <ClientDetail />
               </ProtectedRoute>
             } />
             <Route path="/coach/workouts" element={
